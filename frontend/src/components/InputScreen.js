@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 
 function InputScreen({ setResult }) {
   const [files, setFiles] = useState([]);
@@ -46,7 +47,7 @@ function InputScreen({ setResult }) {
     }
     
     try {
-      const response = await axios.post('/api/v1/analyze', formData, {
+      const response = await axios.post(`${API_BASE_URL}/api/v1/analyze`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

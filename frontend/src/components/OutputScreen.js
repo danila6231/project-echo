@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 
 function OutputScreen({ savedResult }) {
   const [result, setResult] = useState(savedResult);
@@ -20,7 +21,7 @@ function OutputScreen({ savedResult }) {
     setError('');
     
     try {
-      const response = await axios.get(`/api/v1/result/${token}`);
+      const response = await axios.get(`${API_BASE_URL}/api/v1/result/${token}`);
       setResult(response.data);
     } catch (err) {
       console.error('Error fetching result:', err);

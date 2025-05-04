@@ -168,7 +168,7 @@ class LLMEngine:
                 }
             ],
             text_format=ContentIdeasList,
-            temperature=0.7,
+            temperature=0.7
             #max_output_tokens=1000
         )
         
@@ -178,10 +178,12 @@ class LLMEngine:
         if not content_ideas:
             content_ideas = [
                 ContentIdea(
+                    content_type="post",
                     title="Engaging Content Idea",
+                    theme="General engagement post based on your account theme",
                     caption_draft="This is a suggested caption based on your content style.",
                     hashtag_suggestions=["#content", "#socialmedia", "#engagement"],
-                    post_theme="General engagement post based on your account theme"
+                    reason="This idea is relevant to the account and might be engaging for the audience"
                 )
             ]
         

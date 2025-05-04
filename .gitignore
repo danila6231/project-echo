@@ -1,3 +1,8 @@
+# Experimental files
+experiments/
+experiment.py
+test_screens/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

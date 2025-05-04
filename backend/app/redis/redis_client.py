@@ -10,12 +10,16 @@ class RedisClient:
         if settings.REDIS_URL:
             self.redis = redis.from_url(settings.REDIS_URL)
         else:
+            redis_ssl = False
+            if settings.REDIS_HOST != "localhost":
+                redis_ssl = True
             self.redis = redis.Redis(
                 host=settings.REDIS_HOST,
                 port=settings.REDIS_PORT,
                 db=settings.REDIS_DB,
                 password=settings.REDIS_PASSWORD,
-                decode_responses=True
+                decode_responses=True,
+                ssl=redis_ssl
             )
     
     def get(self, key: str) -> Optional[str]:

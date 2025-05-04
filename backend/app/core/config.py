@@ -11,7 +11,6 @@ class Settings(BaseModel):
     
     # OpenAI settings
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
-    LLM_MODEL: str = os.getenv("LLM_MODEL", "gpt-4o")
     
     # Redis settings
     REDIS_HOST: str = os.getenv("REDIS_HOST", "localhost")

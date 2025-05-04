@@ -63,7 +63,17 @@ function OutputScreen({ savedResult }) {
       <h2>Content Ideas</h2>
       {result.content_ideas.map((idea, index) => (
         <div key={index} className="card">
-          <h3>{idea.title}</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3>{idea.title}</h3>
+            <span style={{
+              background: 'var(--gray-light)',
+              padding: '4px 8px',
+              borderRadius: '16px',
+              fontSize: '0.9rem'
+            }}>
+              {idea.content_type}
+            </span>
+          </div>
           
           <div style={{ marginTop: '15px' }}>
             <h4>Caption Draft</h4>
@@ -91,7 +101,12 @@ function OutputScreen({ savedResult }) {
           
           <div style={{ marginTop: '15px' }}>
             <h4>Post Theme</h4>
-            <p>{idea.post_theme}</p>
+            <p>{idea.theme}</p>
+          </div>
+
+          <div style={{ marginTop: '15px' }}>
+            <h4>Why This Works</h4>
+            <p>{idea.reason}</p>
           </div>
         </div>
       ))}

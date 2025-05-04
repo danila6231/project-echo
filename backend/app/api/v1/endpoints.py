@@ -48,14 +48,13 @@ async def analyze_account(
         context_processor.cleanup_temp_files(image_paths)
         
         # Prepare response
-        response = {
-            "account_summary": result["account_summary"],
-            "content_ideas": result["content_ideas"],
-            "token": token
-        }
-        
+        response = OutputResponse(
+            account_summary=result["account_summary"],
+            content_ideas=result["content_ideas"],
+            token=token
+        )
         # Store response in Redis
-        token_manager.store_response(token, response)
+        token_manager.store_response(token, response.model_dump())
         
         return response
         
@@ -63,7 +62,7 @@ async def analyze_account(
         # Clean up any temp files in case of error
         if 'image_paths' in locals():
             context_processor.cleanup_temp_files(image_paths)
-        
+        print(str(e))
         raise HTTPException(
             status_code=500,
             detail=f"An error occurred while processing your request: {str(e)}"

@@ -2,9 +2,9 @@ import base64
 from typing import Dict, List, Optional
 import openai
 
-from app.core.config import settings
-from app.core.llm_config import llm_config
-from app.models.output import ContentIdea, OutputResponse
+from app.core.config.main_config import settings
+from app.core.config.llm_config import llm_config
+from app.models.schemas import ContentIdea
 from pydantic import BaseModel
 
 

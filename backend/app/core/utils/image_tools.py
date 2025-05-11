@@ -1,6 +1,5 @@
 from PIL import Image
 import io
-from typing import Optional, Tuple
 
 def validate_image(image_data: bytes) -> bool:
     """

@@ -1,9 +1,8 @@
-import secrets
 import uuid
 from typing import Dict, Optional
 
-from app.redis.redis_client import redis_client
-from app.core.config import settings
+from app.infrastructure.redis_client import redis_client
+from app.core.config.main_config import settings
 
 class TokenManager:
     """Manages session tokens for user requests and responses."""

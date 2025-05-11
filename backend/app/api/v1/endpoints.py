@@ -1,15 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from typing import List, Optional
 
-from app.models.user_input import UserInput
-from app.models.output import OutputResponse
+from app.models.schemas import ContentIdeasResponse
 from app.services.llm_engine import llm_engine
 from app.services.token_manager import token_manager
 from app.services.context_processor import context_processor
 
 router = APIRouter()
 
-@router.post("/analyze", response_model=OutputResponse)
+# todo: extend responses id openapi doc with HTTP 400 and 500
+@router.post("/analyze", response_model=ContentIdeasResponse)
 async def analyze_account(
     files: List[UploadFile] = File(..., description="Screenshots of social media profile (1-3 images)"),
     account_description: Optional[str] = Form(None, description="Optional description of the account")
@@ -48,7 +48,7 @@ async def analyze_account(
         context_processor.cleanup_temp_files(image_paths)
         
         # Prepare response
-        response = OutputResponse(
+        response = ContentIdeasResponse(
             account_summary=result["account_summary"],
             content_ideas=result["content_ideas"],
             token=token
@@ -68,7 +68,7 @@ async def analyze_account(
             detail=f"An error occurred while processing your request: {str(e)}"
         )
 
-@router.get("/result/{token}", response_model=OutputResponse)
+@router.get("/result/{token}", response_model=ContentIdeasResponse)
 async def get_result(token: str):
     """Retrieve a previously generated result using the token."""
     response = token_manager.get_response(token)

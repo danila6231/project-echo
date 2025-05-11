@@ -1,7 +1,7 @@
 import os
 import tempfile
 from fastapi import UploadFile
-from typing import List, Optional
+from typing import List
 
 class ContextProcessor:
     """Processes and prepares user inputs for LLM analysis."""

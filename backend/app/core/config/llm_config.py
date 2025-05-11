@@ -1,12 +1,11 @@
 from pydantic import BaseModel
-from typing import List
 import os
 
 class LLMConfig(BaseModel):
     LLM_MODEL: str = os.getenv("LLM_MODEL", "gpt-4.1-nano-2025-04-14")
-    
+
     MOCK: bool = False
-    
+
     SYSTEM_INSTRUCTIONS: str = '''
 # Identity
 
@@ -41,4 +40,4 @@ Make each idea distinct and tailored to the account's aesthetic and audience.
 '''
 
 # Create global LLM config object
-llm_config = LLMConfig() 
+llm_config = LLMConfig()

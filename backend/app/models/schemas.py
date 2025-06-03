@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List
+
 
 class ContentIdea(BaseModel):
     """Model for a single content idea."""
@@ -10,8 +11,8 @@ class ContentIdea(BaseModel):
     hashtag_suggestions: List[str] = Field(..., description="List of relevant hashtags")
     reason: str = Field(..., description="Reason why this idea is relevant to the account and might be engaging for the audience")
 
-class OutputResponse(BaseModel):
+class ContentIdeasResponse(BaseModel):
     """Model for the complete output response."""
     account_summary: str = Field(..., description="Brief summary of the account based on analysis")
     content_ideas: List[ContentIdea] = Field(..., description="List of suggested content ideas")
-    token: str = Field(..., description="Session token for retrieving this response again") 
+    token: str = Field(..., description="Session token for retrieving this response again")

@@ -1,10 +1,16 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Response, Cookie, Depends
+from fastapi.responses import RedirectResponse
 from typing import List, Optional
+import secrets
+import httpx
+from urllib.parse import urlencode
 
 from app.models.schemas import ContentIdeasResponse
 from app.services.llm_engine import llm_engine
 from app.services.token_manager import token_manager
 from app.services.context_processor import context_processor
+from app.services.session_manager import session_manager
+from app.core.config.main_config import settings
 
 router = APIRouter()
 
@@ -84,4 +90,115 @@ async def get_result(token: str):
 @router.get("/health")
 async def health_check():
     """Simple health check endpoint."""
-    return {"status": "ok"} 
+    return {"status": "ok"}
+
+# Instagram Authentication Endpoints
+@router.get("/auth/instagram")
+async def instagram_login():
+    """Initiate Instagram OAuth flow."""
+    params = {
+        "client_id": settings.INSTAGRAM_CLIENT_ID,
+        "redirect_uri": settings.INSTAGRAM_REDIRECT_URI,
+        "scope": "instagram_business_basic,instagram_business_content_publish,instagram_business_manage_messages,instagram_business_manage_comments",
+        "response_type": "code"
+    }
+    auth_url = f"https://api.instagram.com/oauth/authorize?{urlencode(params)}"
+    return {"auth_url": auth_url}
+
+@router.get("/auth/instagram/callback")
+async def instagram_callback(code: str):
+    """Handle Instagram OAuth callback."""
+    try:
+        # Exchange code for access token
+        async with httpx.AsyncClient() as client:
+            token_response = await client.post(
+                "https://api.instagram.com/oauth/access_token",
+                data={
+                    "client_id": settings.INSTAGRAM_CLIENT_ID,
+                    "client_secret": settings.INSTAGRAM_CLIENT_SECRET,
+                    "grant_type": "authorization_code",
+                    "redirect_uri": settings.INSTAGRAM_REDIRECT_URI,
+                    "code": code
+                }
+            )
+            token_data = token_response.json()
+            
+            if "access_token" not in token_data:
+                # Redirect to frontend with error
+                return RedirectResponse(
+                    url=f"{settings.FRONTEND_URL}/login?error=auth_failed",
+                    status_code=302
+                )
+            
+            access_token = token_data["access_token"]
+            user_id = token_data.get("user_id")
+            
+            # Get user info
+            user_response = await client.get(
+                f"https://graph.instagram.com/me",
+                params={
+                    "fields": "id,username,account_type",
+                    "access_token": access_token
+                }
+            )
+            user_data = user_response.json()
+            
+            # Create session
+            session_id = session_manager.create_session({
+                "user_id": user_id,
+                "username": user_data.get("username"),
+                "account_type": user_data.get("account_type"),
+                "access_token": access_token
+            })
+            
+            # Create redirect response with session cookie
+            redirect_response = RedirectResponse(
+                url=settings.FRONTEND_URL,
+                status_code=302
+            )
+            
+            # Set session cookie
+            redirect_response.set_cookie(
+                key="session_id",
+                value=session_id,
+                httponly=True,
+                secure=settings.COOKIE_SECURE,
+                samesite="lax",
+                max_age=settings.SESSION_EXPIRY
+            )
+            
+            return redirect_response
+            
+    except Exception as e:
+        # Redirect to frontend with error
+        return RedirectResponse(
+            url=f"{settings.FRONTEND_URL}/login?error={str(e)}",
+            status_code=302
+        )
+
+@router.get("/auth/check")
+async def check_auth(session_id: Optional[str] = Cookie(None)):
+    """Check if user is authenticated."""
+    if not session_id:
+        return {"authenticated": False}
+    
+    session = session_manager.get_session(session_id)
+    if not session:
+        return {"authenticated": False}
+    
+    return {
+        "authenticated": True,
+        "user": {
+            "username": session.get("username"),
+            "account_type": session.get("account_type")
+        }
+    }
+
+@router.post("/auth/logout")
+async def logout(response: Response, session_id: Optional[str] = Cookie(None)):
+    """Logout user and clear session."""
+    if session_id:
+        session_manager.delete_session(session_id)
+    
+    response.delete_cookie(key="session_id")
+    return {"message": "Logged out successfully"} 

@@ -1,8 +1,9 @@
 import requests
+import os
+from app.core.config.main_config import settings
 
-CLIENT_SECRET = "d662651f34cabd7699df240ecaf1e845"
-CLIENT_ID = "1854213381816751"
-
+CLIENT_SECRET = settings.INSTAGRAM_CLIENT_SECRET
+CLIENT_ID = settings.INSTAGRAM_CLIENT_ID
 
 class InstagramAPI:
     def __init__(self, redirect_url: str):
@@ -97,7 +98,7 @@ class InstagramAPI:
         """
         Get all posts for the user.
         """
-        url = f"https://graph.facebook.com/v16.0/me/media"
+        url = f"https://graph.instagram.com/v23.0/me/media"
         params = {"access_token": self.long_lived_token}
         response = requests.get(url, params=params)
         return response.json()

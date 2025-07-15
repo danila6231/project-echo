@@ -2,6 +2,7 @@
 experiments/
 experiment.py
 test_screens/
+test.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

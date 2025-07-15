@@ -97,12 +97,14 @@ async def health_check():
 async def instagram_login():
     """Initiate Instagram OAuth flow."""
     params = {
+        "force_reauth": "true",
         "client_id": settings.INSTAGRAM_CLIENT_ID,
         "redirect_uri": settings.INSTAGRAM_REDIRECT_URI,
-        "scope": "instagram_business_basic,instagram_business_content_publish,instagram_business_manage_messages,instagram_business_manage_comments",
+        "scope": "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,instagram_business_content_publish,instagram_business_manage_insights",
         "response_type": "code"
     }
-    auth_url = f"https://api.instagram.com/oauth/authorize?{urlencode(params)}"
+    auth_url = f"https://www.instagram.com/oauth/authorize?{urlencode(params)}"
+    print(auth_url)
     return {"auth_url": auth_url}
 
 @router.get("/auth/instagram/callback")

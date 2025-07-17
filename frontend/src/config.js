@@ -1,6 +1,7 @@
 const isDevelopment = process.env.NODE_ENV === 'development';
 
-export const API_BASE_URL = process.env.API_BASE_URL || (isDevelopment 
+console.log(process.env.REACT_APP_API_BASE_URL);
+export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || (isDevelopment 
   ? 'http://localhost:8000'  // Development URL
   : 'https://project-echo-5rhk.onrender.com');  // Production URL 
 

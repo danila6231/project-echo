@@ -29,7 +29,6 @@ class Settings(BaseModel):
     INSTAGRAM_CLIENT_ID: str = os.getenv("INSTAGRAM_CLIENT_ID", "")
     INSTAGRAM_CLIENT_SECRET: str = os.getenv("INSTAGRAM_CLIENT_SECRET", "")
     INSTAGRAM_REDIRECT_URI: str = os.getenv("INSTAGRAM_REDIRECT_URI", "http://localhost:8000/api/v1/auth/instagram/callback")
-    INSTAGRAM_REDIRECT_URI = "https://www.google.com"
     
     # Session Settings
     SESSION_EXPIRY: int = int(os.getenv("SESSION_EXPIRY", "86400"))  # 24 hours in seconds

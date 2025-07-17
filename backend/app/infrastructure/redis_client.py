@@ -30,6 +30,18 @@ class RedisClient:
         """Set a value in Redis with optional expiry time."""
         return self.redis.set(key, value, ex=expiry or settings.TOKEN_EXPIRY)
     
+    def setex(self, key: str, expiry: int, value: str) -> bool:
+        """Set a value in Redis with expiry time (seconds)."""
+        return self.redis.setex(key, expiry, value)
+    
+    def exists(self, key: str) -> bool:
+        """Check if a key exists in Redis."""
+        return bool(self.redis.exists(key))
+    
+    def expire(self, key: str, expiry: int) -> bool:
+        """Set expiry time (seconds) for an existing key."""
+        return bool(self.redis.expire(key, expiry))
+    
     def delete(self, key: str) -> bool:
         """Delete a key from Redis."""
         return bool(self.redis.delete(key))

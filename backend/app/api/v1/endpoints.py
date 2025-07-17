@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Response, Cookie, Depends
 from fastapi.responses import RedirectResponse
-from typing import List, Optional
+from typing import List, Optional, Annotated
 import secrets
 import httpx
 from urllib.parse import urlencode
@@ -179,8 +179,10 @@ async def instagram_callback(code: str):
         )
 
 @router.get("/auth/check")
-async def check_auth(session_id: Optional[str] = Cookie(None)):
+async def check_auth(session_id: Annotated[str | None, Cookie()] = None):
     """Check if user is authenticated."""
+    print(session_id)
+    print(Cookie())
     if not session_id:
         return {"authenticated": False}
     

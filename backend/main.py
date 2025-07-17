@@ -9,7 +9,11 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For development; restrict in production
+    allow_origins=[
+        "http://localhost:3000",  # Local development
+        "https://project-echo-git-login-flow-danila6231s-projects.vercel.app",  # Preview frontend
+        "https://project-echo-inky.vercel.app" # Production frontend
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

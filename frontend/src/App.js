@@ -17,8 +17,9 @@ function App() {
 
   const checkAuth = async () => {
     try {
+      console.log('Checking auth...');
       const response = await axios.get('/api/v1/auth/check');
-      
+      console.log('Auth check response:', response.data);
       setIsAuthenticated(response.data.authenticated);
       if (response.data.authenticated) {
         setUser(response.data.user);

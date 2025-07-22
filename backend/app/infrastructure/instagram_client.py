@@ -2,6 +2,7 @@ import requests
 from app.core.config.main_config import settings
 from app.models.schemas import PostsDto
 
+
 # TODO: предлагаю переименовать с CLIENT_<что-то> -> APP_<что-то>; как я понимаю это данные именно нашего приложения
 CLIENT_SECRET = settings.INSTAGRAM_CLIENT_SECRET
 CLIENT_ID = settings.INSTAGRAM_CLIENT_ID
@@ -55,7 +56,7 @@ class InstagramApiClient:
         """
         List all conversations or conversations with a specific user.
         """
-        url = f"https://graph.facebook.com/v16.0/{user_id}/conversations"
+        url = f"https://graph.instagram.com/v16.0/{user_id}/conversations"
         params = {"access_token": self.long_lived_token}
         response = requests.get(url, params=params)
         return response.json()
@@ -64,7 +65,7 @@ class InstagramApiClient:
         """
         Get all messages in a specific conversation.
         """
-        url = f"https://graph.facebook.com/v16.0/{conversation_id}/messages"
+        url = f"https://graph.instagram.com/v16.0/{conversation_id}/messages"
         params = {"access_token": self.long_lived_token}
         response = requests.get(url, params=params)
         return response.json()
@@ -73,7 +74,7 @@ class InstagramApiClient:
         """
         Get information about a specific message.
         """
-        url = f"https://graph.facebook.com/v16.0/{message_id}"
+        url = f"https://graph.instagram.com/v16.0/{message_id}"
         params = {"access_token": self.long_lived_token}
         response = requests.get(url, params=params)
         return response.json()
@@ -82,7 +83,7 @@ class InstagramApiClient:
         """
         Send a message to a user.
         """
-        url = f"https://graph.facebook.com/v16.0/{recipient}/messages"
+        url = f"https://graph.instagram.com/v16.0/{recipient}/messages"
         payload = {
             "message": text,
             "access_token": self.long_lived_token
@@ -94,7 +95,7 @@ class InstagramApiClient:
         """
         Send a private reply to a comment.
         """
-        url = f"https://graph.facebook.com/v16.0/{recipient}/private_replies"
+        url = f"https://graph.instagram.com/v16.0/{recipient}/private_replies"
         payload = {
             "message": text,
             "access_token": self.long_lived_token
@@ -116,7 +117,7 @@ class InstagramApiClient:
         """
         Get all comments for a specific post.
         """
-        url = f"https://graph.facebook.com/v16.0/{post_id}/comments"
+        url = f"https://graph.instagram.com/v23.0/{post_id}/comments"
         params = {"access_token": self.long_lived_token}
         response = requests.get(url, params=params)
         return response.json()
@@ -125,7 +126,7 @@ class InstagramApiClient:
         """
         Получить инфу о пользаке инсты от апишки инсты
         """
-        url = f"https://graph.facebook.com/v16.0/me"
+        url = f"https://graph.instagram.com/v16.0/me"
         params = {"fields": "user_id,username", "access_token": self.long_lived_token}
         response = requests.get(url, params=params)
         return response.json()

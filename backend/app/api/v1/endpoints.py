@@ -14,6 +14,17 @@ from app.core.config.main_config import settings
 
 router = APIRouter()
 
+# TODO эндпоинт с анализом аккаунта:
+# 1) Пока не смоторим дифф между snapshot контекста об аккаунте, каждый раз полный фетч информации
+# 2) Нужен вариант с доступом к переписке и без него (2 уровня точности ответа), пока реализуем только вариант с доступом к переписке
+# 3) Придумать дизайн хранения контекста + иметь в виду RAG
+
+# TODO эндпоинт с запросом в чатгпт:
+# 1) Актуализация контекста, если необходимо
+# 2) Сериализация хранимого контекста и составление запроса
+# 3) Сам запрос
+
+
 # todo: extend responses id openapi doc with HTTP 400 and 500
 @router.post("/analyze", response_model=ContentIdeasResponse)
 async def analyze_account(
@@ -107,6 +118,10 @@ async def instagram_login():
     print(auth_url)
     return {"auth_url": auth_url}
 
+# TODO авторизация:
+# 1) Внести instagram_client методы
+# 2) Пока нет обмена на long-lived, добавить
+# 3) Сделать lookup пары user_id: long-lived token в redis на этапе обмена short token на long-lived token
 @router.get("/auth/instagram/callback")
 async def instagram_callback(code: str):
     """Handle Instagram OAuth callback."""

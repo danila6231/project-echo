@@ -14,11 +14,11 @@ class Chat:
     def __init__(self):
         self._context: List[Dict[str, str]] = []
 
-    def preset_with_instruction(self, instruction: str):
-        self._context.append({'role': 'system', 'content': instruction})
+    def preset_with_instruction(self, preset: str):
+        self._context.append({'role': 'system', 'content': preset})
         return self
 
-    def prompt(self, prompt: str, image_path: str = None):
+    def add_prompt(self, prompt: str, image_path: str = None):
         if image_path:
             base64_image = _encode_image(image_path)
             self._context.append({'role': 'user', "content": [
@@ -34,7 +34,7 @@ class Chat:
             self._context.append({'role': 'user', 'content': prompt})
         return self
 
-    def set_response(self, response: str):
+    def add_response(self, response: str):
         self._context.append({'role': 'assistant', 'content': response})
 
     @property
@@ -48,7 +48,7 @@ class OpenAIClient:
         self.chats: Dict[str, Chat] = {}
 
     def prompt(self, chat: Chat, text: str, image_path: str = None) -> str:
-        chat.prompt(text, image_path)
+        chat.add_prompt(text, image_path)
 
         response = openai.ChatCompletion.create(
             model=self.model,
@@ -56,5 +56,5 @@ class OpenAIClient:
             max_tokens=1000,
         )
         response = response['choices'][0]['message']['content']
-        chat.set_response(response)
+        chat.add_response(response)
         return response.strip()

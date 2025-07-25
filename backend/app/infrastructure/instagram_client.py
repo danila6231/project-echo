@@ -1,3 +1,5 @@
+import json
+
 import requests
 from app.core.config.main_config import settings
 from app.models.schemas import PostsDto, ShortLivedTokenDto, LongLivedTokenDto, CommentsDto, UserInfoDto, \
@@ -16,11 +18,7 @@ class InstagramApiClient:
         self.long_lived_token = None
         self.user_id = None
 
-    def with_long_lived_token(self, long_lived_token: str):
-        self.long_lived_token = long_lived_token
-        return self
-
-    def get_short_lived_token(self, code: str):
+    def get_short_lived_token(self, code: str) -> ShortLivedTokenDto:
         """
         Exchange the authorization code for a short-lived access token.
         """

@@ -1,9 +1,10 @@
+import json
 import openai
 import base64
 from pathlib import Path
 from typing import List, Dict
 
-from app.core.config import llm_config
+from pydantic import BaseModel, Field, ValidationError
 
 
 def _encode_image(image_path: str) -> str:
@@ -12,10 +13,15 @@ def _encode_image(image_path: str) -> str:
     return base64.b64encode(image_bytes).decode("utf-8")
 
 
-class Chat:
-    def __init__(self):
-        self._context: List[Dict[str, str]] = []
+class ChatJSON(BaseModel):
+    context: List[Dict[str, str]] = Field(..., title="Context")
 
+
+class Chat:
+    def __init__(self, context = None):
+        self._context: List[Dict[str, str]] = [] if context is None else context
+
+    # TODO: staticmethod? builder?
     def preset_with_instruction(self, preset: str):
         self._context.append({'role': 'system', 'content': preset})
         return self
@@ -39,6 +45,24 @@ class Chat:
     @property
     def contexts(self):
         return self._context
+
+    def serialize(self) -> str:
+        chat_json = ChatJSON(context=self._context)
+        return chat_json.model_dump_json()
+
+    @staticmethod
+    def deserialize(context: str) -> "Chat":
+        try:
+            data = json.loads(context)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Некорректный JSON: {e}")
+
+        try:
+            chat_data = ChatJSON(**data)
+        except ValidationError as e:
+            raise ValueError(f"Структура данных не соответствует ожидаемой модели: {e}")
+
+        return Chat(chat_data.context)
 
 
 class OpenAIClient:

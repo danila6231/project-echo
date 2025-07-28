@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
-import InputScreen from './components/InputScreen';
-import OutputScreen from './components/OutputScreen';
+import CommentScreen from './components/CommentScreen';
+import ReplyScreen from './components/ReplyScreen';
 import Login from './components/Login';
 import axios from './utils/axios';
 
 function App() {
-  const [result, setResult] = useState(null);
+  const [comment, setComment] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(null);
   const [user, setUser] = useState(null);
 
@@ -57,7 +57,7 @@ function App() {
       <div className="App">
         {isAuthenticated && (
           <header className="App-header">
-            <h1>AI SMM Assistant</h1>
+            <h1>AI Comment Reply Assistant</h1>
             <div className="user-info">
               <span>@{user?.username}</span>
               <button className="logout-button" onClick={handleLogout}>
@@ -78,17 +78,17 @@ function App() {
               path="/" 
               element={
                 isAuthenticated ? (
-                  <InputScreen setResult={setResult} />
+                  <CommentScreen setComment={setComment} />
                 ) : (
                   <Navigate to="/login" replace />
                 )
               } 
             />
             <Route 
-              path="/results/:token" 
+              path="/reply" 
               element={
                 isAuthenticated ? (
-                  <OutputScreen savedResult={result} />
+                  <ReplyScreen comment={comment} />
                 ) : (
                   <Navigate to="/login" replace />
                 )
@@ -98,7 +98,7 @@ function App() {
         </main>
         {isAuthenticated && (
           <footer>
-            <p>AI-powered content ideas for your social media</p>
+            <p>AI-powered reply suggestions for your Instagram comments</p>
           </footer>
         )}
       </div>

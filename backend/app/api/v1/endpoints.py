@@ -14,6 +14,25 @@ from app.core.config.main_config import settings
 
 router = APIRouter()
 
+def get_auth_session(session_id: Annotated[Optional[str], Cookie()] = None):
+    """Helper function to check authentication and return session data."""
+    if settings.SKIP_LOGIN:
+        return {
+            "username": settings.TEST_USER_USERNAME,
+            "account_type": settings.TEST_USER_ACCOUNT_TYPE,
+            "user_id": settings.TEST_USER_ID,
+            "access_token": settings.TEST_USER_TOKEN
+        }
+        
+    if not session_id:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    session = session_manager.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=401, detail="Session expired")
+        
+    return session
+
 # TODO эндпоинт с анализом аккаунта:
 # 1) Пока не смоторим дифф между snapshot контекста об аккаунте, каждый раз полный фетч информации
 # 2) Нужен вариант с доступом к переписке и без него (2 уровня точности ответа), пока реализуем только вариант с доступом к переписке
@@ -194,24 +213,19 @@ async def instagram_callback(code: str):
         )
 
 @router.get("/auth/check")
-async def check_auth(session_id: Annotated[str | None, Cookie()] = None):
+async def check_auth(session_id: Annotated[Optional[str], Cookie()] = None):
     """Check if user is authenticated."""
-    print(session_id)
-    print(Cookie())
-    if not session_id:
-        return {"authenticated": False}
-    
-    session = session_manager.get_session(session_id)
-    if not session:
-        return {"authenticated": False}
-    
-    return {
-        "authenticated": True,
-        "user": {
-            "username": session.get("username"),
-            "account_type": session.get("account_type")
+    try:
+        session = get_auth_session(session_id)
+        return {
+            "authenticated": True,
+            "user": {
+                "username": session.get("username"),
+                "account_type": session.get("account_type")
+            }
         }
-    }
+    except HTTPException:
+        return {"authenticated": False}
 
 @router.post("/auth/logout")
 async def logout(response: Response, session_id: Optional[str] = Cookie(None)):
@@ -220,4 +234,51 @@ async def logout(response: Response, session_id: Optional[str] = Cookie(None)):
         session_manager.delete_session(session_id)
     
     response.delete_cookie(key="session_id")
-    return {"message": "Logged out successfully"} 
+    return {"message": "Logged out successfully"}
+
+# Mock endpoints for comment analysis feature
+@router.get("/comments/latest")
+async def get_latest_comment(session: dict = Depends(get_auth_session)):
+    """Fetch latest comment from user's Instagram account."""
+    # Mock comment data
+    return {
+        "comment": {
+            "id": "mock_comment_123",
+            "text": "Love your content! Can you share more tips about healthy eating?",
+            "username": "fitness_enthusiast_22",
+            "timestamp": "2024-01-15T14:30:00Z",
+            "post_id": "mock_post_456",
+            "post_caption": "5 Easy Ways to Start Your Fitness Journey 💪 #fitness #healthylifestyle",
+            "profile_pic_url": "https://via.placeholder.com/50"
+        }
+    }
+
+@router.post("/comments/suggest-reply")
+async def suggest_comment_reply(
+    comment_id: str = Form(...),
+    session: dict = Depends(get_auth_session)
+):
+    """Generate a reply suggestion based on account analysis."""
+    # Mock reply suggestion based on "account analysis"
+    return {
+        "suggested_reply": {
+            "text": "Thank you so much! 🙏 I'd love to share more healthy eating tips! Check out my latest post on meal prep basics, and stay tuned for a detailed guide on balanced nutrition coming next week! What specific aspect of healthy eating interests you most?",
+            "tone": "friendly and engaging",
+            "includes_cta": True,
+            "analysis": {
+                "account_type": "Health & Fitness Influencer",
+                "engagement_strategy": "Building community through questions and valuable content",
+                "personalization": "References recent content and promises future value"
+            }
+        },
+        "alternative_replies": [
+            {
+                "text": "Thanks for the love! 💚 Absolutely! Tomorrow I'm dropping my top 10 healthy eating hacks. Any particular area you're struggling with?",
+                "tone": "casual and helpful"
+            },
+            {
+                "text": "I appreciate your support! ✨ I've got a whole series on healthy eating coming up. Follow along and don't miss the meal prep guide this Friday!",
+                "tone": "professional and informative"
+            }
+        ]
+    } 

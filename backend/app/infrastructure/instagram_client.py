@@ -18,6 +18,10 @@ class InstagramApiClient:
         self.long_lived_token = None
         self.user_id = None
 
+    def with_long_lived_token(self, long_lived_token):
+        self.long_lived_token = long_lived_token
+        return self
+
     def get_short_lived_token(self, code: str) -> ShortLivedTokenDto:
         """
         Exchange the authorization code for a short-lived access token.

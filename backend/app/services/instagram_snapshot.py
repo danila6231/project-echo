@@ -59,8 +59,8 @@ def describe_instagram_account(token: str) -> str:
     client = InstagramApiClient().with_long_lived_token(token)
     
     # Fetch posts data
-    posts_data = client.posts()
-    user_info = client.get_user_info()
+    posts_data = client.get_posts()
+    user_info = client.get_me_info()
 
     # Start providing context
     gpt_client = OpenAIClient()
@@ -82,18 +82,18 @@ def describe_instagram_account(token: str) -> str:
     
     # Fetch detailed comments for each post
     for post in posts_data.data:
-        comments = client.comments(post.id)
-        for comment in comments['data']:
-            comment_detailed = client.comment_details(comment['id'])
+        comments = client.get_comments(post.id)
+        for comment in comments.data:
+            comment_detailed = client.comment_details(comment.id)
             prompt_text = comment_to_str(comment_detailed)
             chat.add_prompt(prompt_text)
     
     # Fetch private dialogs
-    private_dialogs = client.conversations(user_info['user_id'])
+    private_dialogs = client.get_conversations()
     
     # Fetch detailed private dialogs
-    detailed_private_dialogs = [client.private_dialog_details(dialog['id']) for dialog in private_dialogs['data']]
-    prompt_text = dialogs_to_str(detailed_private_dialogs, user_info['user_id'])
+    detailed_private_dialogs = [client.private_dialog_details(dialog.id) for dialog in private_dialogs.data]
+    prompt_text = dialogs_to_str(detailed_private_dialogs, user_info.user_id)
     chat.add_prompt(prompt_text)
 
     description = gpt_client.prompt(chat)

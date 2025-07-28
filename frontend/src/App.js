@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
-import CommentScreen from './components/CommentScreen';
+import CommentsListScreen from './components/CommentsListScreen';
 import ReplyScreen from './components/ReplyScreen';
 import Login from './components/Login';
 import axios from './utils/axios';
@@ -78,7 +78,7 @@ function App() {
               path="/" 
               element={
                 isAuthenticated ? (
-                  <CommentScreen setComment={setComment} />
+                  <CommentsListScreen setComment={setComment} />
                 ) : (
                   <Navigate to="/login" replace />
                 )

@@ -17,7 +17,7 @@ function CommentScreen({ setComment }) {
     setError('');
     
     try {
-      const response = await axios.get('/api/v1/comments/latest');
+      const response = await axios.get('/api/v1/comments/latest-single');
       setLatestComment(response.data.comment);
       setComment(response.data.comment);
     } catch (err) {

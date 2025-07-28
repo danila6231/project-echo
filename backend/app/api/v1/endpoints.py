@@ -11,6 +11,7 @@ from app.services.token_manager import token_manager
 from app.services.context_processor import context_processor
 from app.services.session_manager import session_manager
 from app.core.config.main_config import settings
+from app.infrastructure.instagram_client import InstagramApiClient
 
 router = APIRouter()
 
@@ -238,20 +239,150 @@ async def logout(response: Response, session_id: Optional[str] = Cookie(None)):
 
 # Mock endpoints for comment analysis feature
 @router.get("/comments/latest")
-async def get_latest_comment(session: dict = Depends(get_auth_session)):
-    """Fetch latest comment from user's Instagram account."""
-    # Mock comment data
-    return {
-        "comment": {
-            "id": "mock_comment_123",
+async def get_latest_comments(session: dict = Depends(get_auth_session)):
+    """Fetch latest comments from user's Instagram posts."""
+    
+    # Mock data for fallback
+    mock_comments = [
+        {
+            "id": "mock_comment_1",
             "text": "Love your content! Can you share more tips about healthy eating?",
             "username": "fitness_enthusiast_22",
             "timestamp": "2024-01-15T14:30:00Z",
             "post_id": "mock_post_456",
             "post_caption": "5 Easy Ways to Start Your Fitness Journey 💪 #fitness #healthylifestyle",
             "profile_pic_url": "https://via.placeholder.com/50"
+        },
+        {
+            "id": "mock_comment_2",
+            "text": "This is exactly what I needed today! Thank you for the motivation 🙌",
+            "username": "wellness_warrior",
+            "timestamp": "2024-01-15T12:15:00Z",
+            "post_id": "mock_post_457",
+            "post_caption": "Morning routine that changed my life ☀️ #morningroutine #wellness",
+            "profile_pic_url": "https://via.placeholder.com/50"
+        },
+        {
+            "id": "mock_comment_3",
+            "text": "Could you make a video tutorial on this? Would love to learn more!",
+            "username": "curious_learner",
+            "timestamp": "2024-01-15T10:45:00Z",
+            "post_id": "mock_post_458",
+            "post_caption": "My secret to staying productive all day 📈 #productivity #mindset",
+            "profile_pic_url": "https://via.placeholder.com/50"
         }
-    }
+    ]
+    
+    try:
+        # Initialize Instagram client
+        client = InstagramApiClient()
+        
+        # Set the long-lived token from session
+        access_token = session.get("access_token")
+        if not access_token:
+            # Return mock data if no access token
+            return {"comments": mock_comments, "is_mock": True}
+        
+        client.long_lived_token = access_token
+        client.user_id = session.get("user_id")
+        
+        # Get user's posts
+        posts_response = client.get_posts()
+        
+        if not posts_response.data:
+            # Return mock data if no posts
+            return {"comments": mock_comments, "is_mock": True}
+        
+        # Collect comments from recent posts
+        all_comments = []
+        posts_with_captions = {}  # Store post captions for later use
+        
+        # Limit to first 5 posts to avoid too many API calls
+        for post in posts_response.data[:5]:
+            try:
+                # Get post details including caption
+                post_url = f"https://graph.instagram.com/v23.0/{post.id}"
+                post_params = {
+                    "fields": "caption,timestamp",
+                    "access_token": client.long_lived_token
+                }
+                
+                import httpx
+                async with httpx.AsyncClient() as http_client:
+                    post_response = await http_client.get(post_url, params=post_params)
+                    if post_response.status_code == 200:
+                        post_data = post_response.json()
+                        posts_with_captions[post.id] = {
+                            "caption": post_data.get("caption", ""),
+                            "timestamp": post_data.get("timestamp", "")
+                        }
+                
+                # Get comments for this post
+                comments_response = client.get_comments(post.id)
+                
+                if comments_response.data:
+                    for comment in comments_response.data:
+                        # Get comment details
+                        comment_url = f"https://graph.instagram.com/v23.0/{comment.id}"
+                        comment_params = {
+                            "fields": "text,username,timestamp",
+                            "access_token": client.long_lived_token
+                        }
+                        
+                        comment_response = await http_client.get(comment_url, params=comment_params)
+                        if comment_response.status_code == 200:
+                            comment_data = comment_response.json()
+                            
+                            all_comments.append({
+                                "id": comment.id,
+                                "text": comment_data.get("text", ""),
+                                "username": comment_data.get("username", ""),
+                                "timestamp": comment_data.get("timestamp", ""),
+                                "post_id": post.id,
+                                "post_caption": posts_with_captions.get(post.id, {}).get("caption", ""),
+                                "profile_pic_url": f"https://graph.instagram.com/v23.0/{comment_data.get('username', '')}/picture"
+                            })
+                            
+            except Exception as e:
+                print(f"Error fetching comments for post {post.id}: {str(e)}")
+                continue
+        
+        if all_comments:
+            # Sort by timestamp (newest first)
+            all_comments.sort(key=lambda x: x["timestamp"], reverse=True)
+            # Return up to 10 latest comments
+            return {"comments": all_comments[:10], "is_mock": False}
+        else:
+            # Return mock data if no comments found
+            return {"comments": mock_comments, "is_mock": True}
+            
+    except Exception as e:
+        print(f"Error fetching Instagram comments: {str(e)}")
+        # Return mock data on error
+        return {"comments": mock_comments, "is_mock": True, "error": str(e)}
+
+@router.get("/comments/latest-single")
+async def get_latest_comment(session: dict = Depends(get_auth_session)):
+    """Fetch latest comment from user's Instagram account."""
+    # Get all comments and return just the first one
+    comments_response = await get_latest_comments(session)
+    comments = comments_response.get("comments", [])
+    
+    if comments:
+        return {"comment": comments[0]}
+    else:
+        # Return a single mock comment if no comments found
+        return {
+            "comment": {
+                "id": "mock_comment_123",
+                "text": "Love your content! Can you share more tips about healthy eating?",
+                "username": "fitness_enthusiast_22",
+                "timestamp": "2024-01-15T14:30:00Z",
+                "post_id": "mock_post_456",
+                "post_caption": "5 Easy Ways to Start Your Fitness Journey 💪 #fitness #healthylifestyle",
+                "profile_pic_url": "https://via.placeholder.com/50"
+            }
+        }
 
 @router.post("/comments/suggest-reply")
 async def suggest_comment_reply(

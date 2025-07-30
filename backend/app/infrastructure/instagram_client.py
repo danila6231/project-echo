@@ -10,12 +10,17 @@ CLIENT_SECRET = settings.INSTAGRAM_CLIENT_SECRET
 CLIENT_ID = settings.INSTAGRAM_CLIENT_ID
 APP_URI = settings.INSTAGRAM_REDIRECT_URI
 
+
 class InstagramApiClient:
     def __init__(self):
         self.redirect_url = APP_URI
         self.short_lived_token = None
         self.long_lived_token = None
         self.user_id = None
+
+    def with_long_lived_token(self, long_lived_token):
+        self.long_lived_token = long_lived_token
+        return self
 
     def get_short_lived_token(self, code: str) -> ShortLivedTokenDto:
         """
@@ -141,6 +146,7 @@ class InstagramApiClient:
         """
         Get all posts for the user.
         """
+        # TODO: pagination here
         url = f"https://graph.instagram.com/v23.0/me/media"
         params = {"access_token": self.long_lived_token}
         response = requests.get(url, params=params)
@@ -164,3 +170,33 @@ class InstagramApiClient:
         params = {"fields": "user_id,username", "access_token": self.long_lived_token}
         response = requests.get(url, params=params)
         return UserInfoDto.model_validate(response.json())
+
+    # TODO: dto
+    def post_details(self, post_id: str):
+        """
+        Get detailed information about a specific post.
+        """
+        url = f"https://graph.instagram.com/v23.0/{post_id}"
+        params = {"fields": "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp", "access_token": self.long_lived_token}
+        response = requests.get(url, params=params)
+        return response.json()
+
+    # TODO: dto
+    def comment_details(self, comment_id: str):
+        """
+        Get detailed information about a specific comment.
+        """
+        url = f"https://graph.instagram.com/v23.0/{comment_id}"
+        params = {"fields": "id,text,username,timestamp", "access_token": self.long_lived_token}
+        response = requests.get(url, params=params)
+        return response.json()
+
+    # TODO: dto
+    def private_dialog_details(self, dialog_id: str):
+        """
+        Get detailed information about a specific private dialog.
+        """
+        url = f"https://graph.instagram.com/v16.0/{dialog_id}/messages"
+        params = {"fields": "id,message,from,to,timestamp", "access_token": self.long_lived_token}
+        response = requests.get(url, params=params)
+        return response.json()

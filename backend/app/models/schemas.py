@@ -44,11 +44,11 @@ class Paging(BaseModel):
 
 class PostsDto(BaseModel):
     data: List[Post] = Field()
-    paging: Paging = Field()
+    paging: Optional[Paging] = Field(default=None)
 
 class CommentsDto(BaseModel):
     data: List[Comment] = Field()
-    paging: Paging = Field()
+    paging: Optional[Paging] = Field(default=None)
 
 class UserInfoDto(BaseModel):
     user_id: str = Field()
@@ -83,7 +83,7 @@ class MessageMetainfo(BaseModel):
 
 class Messages(BaseModel):
     data: List[MessageMetainfo] = Field()
-    paging: Paging = Field()
+    paging: Optional[Paging] = Field(default=None)
 
 class DialogDto(BaseModel):
     messages: Messages = Field()
@@ -92,3 +92,15 @@ class DialogDto(BaseModel):
 class SendingMessageResponseDto(BaseModel):
     recipient_id: str = Field()
     message_id: str = Field()
+
+'''
+Это отдаем фронту для отрисовки новых комментариев
+'''
+class CommentInfoDto(BaseModel):
+    id: str = Field()
+    text: str = Field()
+    username: str = Field()
+    timestamp: datetime = Field()
+    post_id: str = Field()
+    post_caption: str = Field()
+    profile_pic_url: str = Field()

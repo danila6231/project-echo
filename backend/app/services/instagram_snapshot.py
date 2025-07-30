@@ -1,7 +1,10 @@
+from typing import List
+
 import requests
 
 from app.infrastructure.instagram_client import InstagramApiClient
 from app.infrastructure.openai_client import Chat, OpenAIClient
+from app.models.schemas import CommentInfoDto
 
 LONG_LIVED_TOKEN = 'IGAAIJkphRBX5BZAE5FaGNSejhRaWRJZAU14QmRXZAGVMN0stSkNIV1hIQktqZAEQ1enRDNlFiQ0dfbWN6cnVvaklKdmhhX0NqZAFpOd3FrVEtNQlRhclpiSXlBMVNWY1RoZA194VzhGdmU5LVF0VzMzVWZAmbmxR'
 IMAGE_STORAGE = "/Users/ivanleskin/Desktop/inst_images"
@@ -99,6 +102,30 @@ def describe_instagram_account(token: str) -> str:
     description = gpt_client.prompt(chat)
 
     return description
+
+
+#TODO
+def get_new_comments_id() -> List[str]:
+    """Retrieve not handled Instagram comments."""
+    # todo: только комментарии от клиентов, комментарии хозяина аккаунта надо скипать
+
+    # todo: MOCK
+    return ['17886809181292228', '18073286516500001', '17880999744340319', '17988937292820818']
+
+
+#TODO
+def get_comment_info_by_id(comment_id: str) -> CommentInfoDto:
+    data = {
+            "id": comment_id,
+            "text": "@definitely.test.account ответ в треде",
+            "username": "TODO",
+            "timestamp": "2025-06-28T23:28:49+0000",
+            "post_id": "18119788027464633",
+            "post_caption": "stub TODO",
+            "profile_pic_url": "https://via.placeholder.com/50"
+        }
+    return CommentInfoDto(**data)
+
 
 
 # if __name__ == '__main__':

@@ -187,7 +187,7 @@ class InstagramApiClient:
         Get detailed information about a specific comment.
         """
         url = f"https://graph.instagram.com/v23.0/{comment_id}"
-        params = {"fields": "id,text,username,timestamp", "access_token": self.long_lived_token}
+        params = {"fields": "id,text,from,media,username,timestamp", "access_token": self.long_lived_token}
         response = requests.get(url, params=params)
         return response.json()
 

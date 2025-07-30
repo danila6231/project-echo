@@ -11,7 +11,7 @@ class ChatGptService:
         self.chat_gpt_prompt = "Появилось новое сообщение/комментарий"  # todo: naming? move to .env?
 
     @staticmethod
-    def _instagram_id_naming_strategy(inst_id: str) -> str:
+    def instagram_id_naming_strategy(inst_id: str) -> str:
         return "inst:" + inst_id
 
     # todo: пока обрабатывает только текст
@@ -20,33 +20,35 @@ class ChatGptService:
         Обработать новое сообщение или комментарий и предложить вариант ответа на него.
         """
 
-        # receiver_inst_id_redis = self._instagram_id_naming_strategy(receiver_inst_id)
-        # chat = self.redis.get(receiver_inst_id_redis)
-
-        chat = None
-        if chat is None:
+        receiver_inst_id_redis = self.instagram_id_naming_strategy(receiver_inst_id)
+        receiver_chat = self.redis.get(receiver_inst_id_redis)
+        if receiver_chat is None:
             receiver_account_description = describe_instagram_account(receiver_long_lived_token)
 
-            chat = Chat().preset_with_instruction(receiver_account_description)
+            receiver_chat = Chat().preset_with_instruction(receiver_account_description)
 
-            # ok = self.redis.setex(receiver_inst_id_redis, self.context_expiration_time, chat.serialize())
-            # if not ok:
-            #     raise RuntimeError(f"Failure when store context for user {receiver_inst_id} in Redis")
+            ok = self.redis.setex(receiver_inst_id_redis, self.context_expiration_time, receiver_chat.serialize())
+            if not ok:
+                raise RuntimeError(f"Failure when store context for user {receiver_inst_id} in Redis")
 
-        return self.openai_client.prompt(chat, f"Сгенерируй ответ на личное сообщение/комментарий {incoming_content}")
+        return self.openai_client.prompt(receiver_chat, f"Сгенерируй ответ на личное сообщение/комментарий {incoming_content}")
 
 
 if __name__ == "__main__":
-    # chat = Chat().preset_with_instruction("Ты помощник").add_prompt("Привет")
-    # json_string = chat.serialize()
-    #
-    # print(json_string)
-    #
-    # new_chat = Chat.deserialize(json_string)
-    # print(new_chat.contexts)
+    """
+    Тестирование работы chatgpt_service и взаимодействия с redis
+    """
+    chat = Chat().preset_with_instruction("Ты помощник").add_prompt("Привет")
+    json_string = chat.serialize()
+
+    print(json_string)
+
+    new_chat = Chat.deserialize(json_string)
+    print(new_chat.contexts)
 
     chat_gpt_service = ChatGptService()
     print(chat_gpt_service.handle_incoming_interaction("100500", LONG_LIVED_TOKEN, "Ты кто, золотой?"))
+    print(redis_client.get(ChatGptService.instagram_id_naming_strategy("100500")))
 
-    # redis_client.setex("test_key", 1000, "test_value")
-    # print(redis_client.get("test_key"))
+    redis_client.setex("test_key", 1000, "test_value")
+    print(redis_client.get("test_key"))

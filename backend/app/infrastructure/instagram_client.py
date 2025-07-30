@@ -18,6 +18,12 @@ class InstagramApiClient:
         self.long_lived_token = None
         self.user_id = None
 
+    def __enter__(self):
+        return self.__init__()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
     def with_long_lived_token(self, long_lived_token):
         self.long_lived_token = long_lived_token
         return self
@@ -36,6 +42,7 @@ class InstagramApiClient:
             "redirect_uri": self.redirect_url,
             "code": code
         }
+        print(f"login payload: {payload}")
         response = requests.post(url, data=payload)
         mapped_response = None
         if response.status_code == 200:
@@ -167,7 +174,7 @@ class InstagramApiClient:
         Получить инфу о пользаке инсты от апишки инсты
         """
         url = f"https://graph.instagram.com/v16.0/me"
-        params = {"fields": "user_id,username", "access_token": self.long_lived_token}
+        params = {"fields": "user_id,username,account_type", "access_token": self.long_lived_token}
         response = requests.get(url, params=params)
         return UserInfoDto.model_validate(response.json())
 

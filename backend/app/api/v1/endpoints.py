@@ -146,54 +146,26 @@ async def instagram_login():
 async def instagram_callback(code: str):
     """Handle Instagram OAuth callback."""
     try:
-        # Exchange code for access token
-        async with httpx.AsyncClient() as client:
-            token_response = await client.post(
-                "https://api.instagram.com/oauth/access_token",
-                data={
-                    "client_id": settings.INSTAGRAM_CLIENT_ID,
-                    "client_secret": settings.INSTAGRAM_CLIENT_SECRET,
-                    "grant_type": "authorization_code",
-                    "redirect_uri": settings.INSTAGRAM_REDIRECT_URI,
-                    "code": code
-                }
-            )
-            token_data = token_response.json()
-            
-            if "access_token" not in token_data:
-                # Redirect to frontend with error
-                return RedirectResponse(
-                    url=f"{settings.FRONTEND_URL}/login?error=auth_failed",
-                    status_code=302
-                )
-            
-            access_token = token_data["access_token"]
-            user_id = token_data.get("user_id")
-            
-            # Get user info
-            user_response = await client.get(
-                f"https://graph.instagram.com/me",
-                params={
-                    "fields": "id,username,account_type",
-                    "access_token": access_token
-                }
-            )
-            user_data = user_response.json()
-            
+        with InstagramApiClient() as instagram_client:
+            # Exchange code for access token
+            instagram_client.get_short_lived_token(code)
+            long_lived_token = instagram_client.get_long_lived_token()
+            user_info = instagram_client.get_me_info()
+
             # Create session
             session_id = session_manager.create_session({
-                "user_id": user_id,
-                "username": user_data.get("username"),
-                "account_type": user_data.get("account_type"),
-                "access_token": access_token
+                "user_id": user_info.user_id,
+                "username": user_info.username,
+                "account_type": user_info.account_type,
+                "access_token": long_lived_token
             })
-            
+
             # Create redirect response with session cookie
             redirect_response = RedirectResponse(
                 url=settings.FRONTEND_URL,
                 status_code=302
             )
-            
+
             # Set session cookie
             redirect_response.set_cookie(
                 key="session_id",
@@ -203,7 +175,7 @@ async def instagram_callback(code: str):
                 samesite="none" if settings.COOKIE_SECURE else "lax",
                 max_age=settings.SESSION_EXPIRY
             )
-            
+
             return redirect_response
             
     except Exception as e:

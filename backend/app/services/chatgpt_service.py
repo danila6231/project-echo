@@ -47,7 +47,7 @@ if __name__ == "__main__":
     print(new_chat.contexts)
 
     chat_gpt_service = ChatGptService()
-    print(chat_gpt_service.handle_incoming_interaction("100500", LONG_LIVED_TOKEN, "Ты кто, золотой?"))
+    print(chat_gpt_service.handle_incoming_interaction("100500", LONG_LIVED_TOKEN, "Какой твой любимый металл?"))
     print(redis_client.get(ChatGptService.instagram_id_naming_strategy("100500")))
 
     redis_client.setex("test_key", 1000, "test_value")

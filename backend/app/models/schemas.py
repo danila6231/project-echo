@@ -53,6 +53,7 @@ class CommentsDto(BaseModel):
 class UserInfoDto(BaseModel):
     user_id: str = Field()
     username: str = Field()
+    account_type: str = Field()
     id: str = Field()
 
 class Conversation(BaseModel):

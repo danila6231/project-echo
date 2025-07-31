@@ -18,6 +18,13 @@ class InstagramApiClient:
         self.long_lived_token = None
         self.user_id = None
 
+    def __enter__(self):
+        self.__init__()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
     def with_long_lived_token(self, long_lived_token):
         self.long_lived_token = long_lived_token
         return self

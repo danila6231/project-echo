@@ -1,6 +1,7 @@
 from typing import List
 
 import requests
+import json
 
 from app.infrastructure.instagram_client import InstagramApiClient
 from app.infrastructure.openai_client import Chat, OpenAIClient
@@ -51,7 +52,6 @@ def download_post_image(image_url: str, save_path: str) -> None:
             with open(save_path, 'wb') as file:
                 file.write(response.content)
 
-
 def describe_instagram_account(token: str) -> str:
     """
     Description consists of:
@@ -97,6 +97,8 @@ def describe_instagram_account(token: str) -> str:
     
     # Fetch detailed private dialogs
     detailed_private_dialogs = [client.private_dialog_details(dialog.id) for dialog in private_dialogs.data]
+
+    print(f"dialogs: {detailed_private_dialogs}")
     prompt_text = dialogs_to_str(detailed_private_dialogs, user_info.user_id)
     chat.add_prompt(prompt_text)
 
@@ -110,26 +112,84 @@ def describe_instagram_account(token: str) -> str:
 #todo: можно выдавать по 5 новых id-шников на вызов функции
 def get_new_comments_id(api_client: InstagramApiClient, redis_client: RedisClient) -> List[str]:
     """Retrieve not handled Instagram comments."""
-    # todo: только комментарии от клиентов, комментарии хозяина аккаунта надо скипать
+    all_comments = []
+    posts_data = api_client.get_posts()
+    for post in posts_data.data:
+        for comment in api_client.get_comments(post.id).data:
+            all_comments.append(comment.id)
 
-    # todo: MOCK
-    return ['17886809181292228', '18073286516500001', '17880999744340319', '17988937292820818']
+    redis_comments_key = "comments_" + api_client.get_me_info().user_id
+
+    last_retrieved_comments_str = redis_client.get(redis_comments_key)
+
+    # update anyway
+    redis_client.set(redis_comments_key, json.dumps(all_comments))
+
+    if last_retrieved_comments_str:
+        last_retrieved_comments = json.loads(last_retrieved_comments_str)
+
+        new_comments = list(set(last_retrieved_comments).symmetric_difference(set(all_comments)))
+
+        return new_comments
+
+    return []
+
+
+def get_new_messages_id(api_client: InstagramApiClient, redis_client: RedisClient) -> List[str]:
+    all_messages = []
+    # Fetch private dialogs
+    private_dialogs = api_client.get_conversations()
+
+    me_id = api_client.get_me_info().user_id
+
+    redis_message_key = "messages_" + me_id
+
+    # Fetch detailed private dialogs
+    detailed_private_dialogs = [api_client.private_dialog_details(dialog.id) for dialog in private_dialogs.data]
+
+    for dialog in detailed_private_dialogs:
+        for message in dialog['data']:
+            if message['from']['id'] == me_id:
+                all_messages.append(message['id'])
+
+    last_retrieved_messages_str = redis_client.get(redis_message_key)
+
+    # update anyway
+    redis_client.set(redis_message_key, json.dumps(all_messages))
+
+    if last_retrieved_messages_str:
+        last_retrieved_messages = json.loads(last_retrieved_messages_str)
+
+        new_messages = list(set(last_retrieved_messages).symmetric_difference(set(all_messages)))
+
+        return new_messages
+
+    return []
 
 
 #TODO
 def get_comment_info_by_id(comment_id: str) -> CommentInfoDto:
-    data = {
+    with InstagramApiClient() as instagram_client:
+        instagram_client.long_lived_token = LONG_LIVED_TOKEN
+        comment_detailed = instagram_client.comment_details(comment_id)
+        print(comment_detailed)
+        post_of_comment = instagram_client.post_details(comment_detailed["media"]["id"])
+        print(post_of_comment)
+
+        data = {
             "id": comment_id,
-            "text": "@definitely.test.account ответ в треде",
-            "username": "TODO",
-            "timestamp": "2025-06-28T23:28:49+0000",
-            "post_id": "18119788027464633",
-            "post_caption": "stub TODO",
-            "profile_pic_url": "https://via.placeholder.com/50"
+            "text": comment_detailed["text"],
+            "username": comment_detailed["from"]["username"],
+            "timestamp": comment_detailed["timestamp"],
+            "post_id": comment_detailed["media"]["id"],
+            "post_caption": post_of_comment["caption"],
+            "profile_pic_url": post_of_comment["media_url"]
         }
     return CommentInfoDto(**data)
 
 
-
-# if __name__ == '__main__':
-#     print(describe_instagram_account(LONG_LIVED_TOKEN))
+if __name__ == '__main__':
+    inst_api_client = InstagramApiClient()
+    inst_api_client.long_lived_token = LONG_LIVED_TOKEN
+    redis_client = RedisClient()
+    print(get_new_messages_id(inst_api_client, redis_client))

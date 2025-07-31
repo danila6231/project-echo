@@ -4,6 +4,7 @@ import requests
 
 from app.infrastructure.instagram_client import InstagramApiClient
 from app.infrastructure.openai_client import Chat, OpenAIClient
+from app.infrastructure.redis_client import RedisClient
 from app.models.schemas import CommentInfoDto
 
 LONG_LIVED_TOKEN = 'IGAAIJkphRBX5BZAE5FaGNSejhRaWRJZAU14QmRXZAGVMN0stSkNIV1hIQktqZAEQ1enRDNlFiQ0dfbWN6cnVvaklKdmhhX0NqZAFpOd3FrVEtNQlRhclpiSXlBMVNWY1RoZA194VzhGdmU5LVF0VzMzVWZAmbmxR'
@@ -105,7 +106,9 @@ def describe_instagram_account(token: str) -> str:
 
 
 #TODO
-def get_new_comments_id() -> List[str]:
+#todo: как будто хуева что эти функции оказались тут, проеб layout'а нашего проекта
+#todo: можно выдавать по 5 новых id-шников на вызов функции
+def get_new_comments_id(api_client: InstagramApiClient, redis_client: RedisClient) -> List[str]:
     """Retrieve not handled Instagram comments."""
     # todo: только комментарии от клиентов, комментарии хозяина аккаунта надо скипать
 

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, NamedTuple
 
 import requests
 import json
@@ -69,7 +69,7 @@ def describe_instagram_account(token: str) -> str:
     # Start providing context
     gpt_client = OpenAIClient()
     chat = Chat()
-    chat.preset_with_instruction("Describe instagram account by next provided posts, comments and private dialogs")
+    chat.preset_with_instruction("Describe instagram account by next provided posts, comments and private dialogs.")
 
     gpt_client.prompt(chat)
     
@@ -110,7 +110,11 @@ def describe_instagram_account(token: str) -> str:
 #TODO
 #todo: как будто хуева что эти функции оказались тут, проеб layout'а нашего проекта
 #todo: можно выдавать по 5 новых id-шников на вызов функции
-def get_new_comments_id(api_client: InstagramApiClient, redis_client: RedisClient) -> List[str]:
+class CommentInfo(NamedTuple):
+    text: str
+    new_flg: bool
+
+def get_new_comments_id(api_client: InstagramApiClient, redis_client: RedisClient) -> List[CommentInfo]:
     """Retrieve not handled Instagram comments."""
     all_comments = []
     posts_data = api_client.get_posts()
@@ -125,17 +129,20 @@ def get_new_comments_id(api_client: InstagramApiClient, redis_client: RedisClien
     # update anyway
     redis_client.set(redis_comments_key, json.dumps(all_comments))
 
+    new_comments = set()
     if last_retrieved_comments_str:
         last_retrieved_comments = json.loads(last_retrieved_comments_str)
 
-        new_comments = list(set(last_retrieved_comments).symmetric_difference(set(all_comments)))
+        new_comments = set(last_retrieved_comments).symmetric_difference(set(all_comments))
 
-        return new_comments
-
-    return []
+    return [CommentInfo(text=comment_id, new_flg=(comment_id in new_comments)) for comment_id in all_comments]
 
 
-def get_new_messages_id(api_client: InstagramApiClient, redis_client: RedisClient) -> List[str]:
+class MessageView(NamedTuple):
+    text: str
+    new_flg: bool
+
+def get_new_messages_id(api_client: InstagramApiClient, redis_client: RedisClient) -> List[MessageView]:
     all_messages = []
     # Fetch private dialogs
     private_dialogs = api_client.get_conversations()
@@ -149,7 +156,7 @@ def get_new_messages_id(api_client: InstagramApiClient, redis_client: RedisClien
 
     for dialog in detailed_private_dialogs:
         for message in dialog['data']:
-            if message['from']['id'] == me_id:
+            if message['from']['id'] != me_id:
                 all_messages.append(message['id'])
 
     last_retrieved_messages_str = redis_client.get(redis_message_key)
@@ -162,9 +169,7 @@ def get_new_messages_id(api_client: InstagramApiClient, redis_client: RedisClien
 
         new_messages = list(set(last_retrieved_messages).symmetric_difference(set(all_messages)))
 
-        return new_messages
-
-    return []
+    return [MessageView(text=message_id, new_flg=(message_id in new_messages)) for message_id in all_messages]
 
 
 #TODO

@@ -41,6 +41,9 @@ class Settings(BaseModel):
     SESSION_EXPIRY: int = int(os.getenv("SESSION_EXPIRY", "86400"))  # 24 hours in seconds
     COOKIE_SECURE: bool = os.getenv("COOKIE_SECURE", "False").lower() == "true"  # Set to True in production
     
+    # Context Settings
+    CONTEXT_EXPIRATION_TIME: int = int(os.getenv("CONTEXT_EXPIRATION_TIME", "100000"))
+    
     # Frontend URL
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
 

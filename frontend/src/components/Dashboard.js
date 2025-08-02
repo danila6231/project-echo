@@ -129,35 +129,36 @@ function Dashboard() {
   };
 
   const renderCommentItem = (comment) => {
-    const key = `comment-${comment.id}`;
+    const [commentData, isNew] = comment;
+    const key = `comment-${commentData.id}`;
     const isExpanded = expandedItems[key];
     const isLoadingReply = loadingReplies[key];
     const replies = suggestedReplies[key];
 
     return (
-      <div key={comment.id} className="interaction-item">
+      <div key={commentData.id} className={`interaction-item ${isNew ? 'new-comment' : ''}`}>
         <div className="interaction-header">
           <img 
-            src={comment.profile_pic_url} 
-            alt={comment.username}
+            src={commentData.profile_pic_url} 
+            alt={commentData.username}
             className="profile-pic"
             onError={(e) => { e.target.src = 'https://via.placeholder.com/40'; }}
           />
           <div className="interaction-info">
-            <h4>@{comment.username}</h4>
-            <span className="timestamp">{formatTimestamp(comment.timestamp)}</span>
+            <h4>@{commentData.username}</h4>
+            <span className="timestamp">{formatTimestamp(commentData.timestamp)}</span>
           </div>
         </div>
         
         <div className="interaction-content">
-          <p className="post-context">On your post: "{comment.post_caption}"</p>
-          <p className="interaction-text">{comment.text}</p>
+          <p className="post-context">On your post: "{commentData.post_caption}"</p>
+          <p className="interaction-text">{commentData.text}</p>
         </div>
 
         <div className="interaction-actions">
           <button 
             className="btn-secondary"
-            onClick={() => toggleReplySuggestions(comment.id, 'comment')}
+            onClick={() => toggleReplySuggestions(commentData.id, 'comment')}
           >
             {isExpanded ? '▼ Hide' : '▶ Show'} Reply Suggestions
           </button>
@@ -216,35 +217,37 @@ function Dashboard() {
   };
 
   const renderMessageItem = (message) => {
-    const key = `message-${message.id}`;
+    const [messageData, isNew] = message;
+    const key = `message-${messageData.id}`;
     const isExpanded = expandedItems[key];
     const isLoadingReply = loadingReplies[key];
     const replies = suggestedReplies[key];
-    const fromUsername = message.from_user?.username || 'Unknown';
+    const fromUsername = messageData.from?.username || 'Unknown';
+    // console.log(messageData);
 
     return (
-      <div key={message.id} className="interaction-item">
+      <div key={messageData.id} className={`interaction-item ${isNew ? 'new-comment' : ''}`}>
         <div className="interaction-header">
-          <img 
+          {/* <img 
             src={'https://via.placeholder.com/40'} 
             alt={fromUsername}
             className="profile-pic"
             onError={(e) => { e.target.src = 'https://via.placeholder.com/40'; }}
-          />
+          /> */}
           <div className="interaction-info">
             <h4>@{fromUsername}</h4>
-            <span className="timestamp">{formatTimestamp(message.created_time)}</span>
+            <span className="timestamp">{formatTimestamp(messageData.created_time)}</span>
           </div>
         </div>
         
         <div className="interaction-content">
-          <p className="interaction-text">{message.message}</p>
+          <p className="interaction-text">{messageData.message}</p>
         </div>
 
         <div className="interaction-actions">
           <button 
             className="btn-secondary"
-            onClick={() => toggleReplySuggestions(message.id, 'message')}
+            onClick={() => toggleReplySuggestions(messageData.id, 'message')}
           >
             {isExpanded ? '▼ Hide' : '▶ Show'} Reply Suggestions
           </button>

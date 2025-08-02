@@ -263,8 +263,8 @@ async def get_latest_comments(session: dict = Depends(get_auth_session)):
         new_comment_ids = get_new_comments_id(inst_api_client, redis_client)
         new_comment_ids = new_comment_ids if new_comment_ids else []
 
-        new_comments = [get_comment_info_by_id(comment_id).model_dump() for comment_id in new_comment_ids]
-        new_comments.sort(key=lambda comment: comment["timestamp"], reverse=True)
+        new_comments = [(get_comment_info_by_id(comment_id).model_dump(), new_flg) for comment_id, new_flg in new_comment_ids]
+        new_comments.sort(key=lambda comment: comment[0]["timestamp"], reverse=True)
         return {"comments": new_comments, "is_mock": False}
             
     except Exception as e:
@@ -272,28 +272,28 @@ async def get_latest_comments(session: dict = Depends(get_auth_session)):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
 
-@router.get("/comments/latest-single")
-async def get_latest_comment(session: dict = Depends(get_auth_session)):
-    """Fetch latest comment from user's Instagram account."""
-    # Get all comments and return just the first one
-    comments_response = await get_latest_comments(session)
-    comments = comments_response.get("comments", [])
+# @router.get("/comments/latest-single")
+# async def get_latest_comment(session: dict = Depends(get_auth_session)):
+#     """Fetch latest comment from user's Instagram account."""
+#     # Get all comments and return just the first one
+#     comments_response = await get_latest_comments(session)
+#     comments = comments_response.get("comments", [])
     
-    if comments:
-        return {"comment": comments[0]}
-    else:
-        # Return a single mock comment if no comments found
-        return {
-            "comment": {
-                "id": "mock_comment_123",
-                "text": "Love your content! Can you share more tips about healthy eating?",
-                "username": "fitness_enthusiast_22",
-                "timestamp": "2024-01-15T14:30:00Z",
-                "post_id": "mock_post_456",
-                "post_caption": "5 Easy Ways to Start Your Fitness Journey 💪 #fitness #healthylifestyle",
-                "profile_pic_url": "https://via.placeholder.com/50"
-            }
-        }
+#     if comments:
+#         return {"comment": comments[0]}
+#     else:
+#         # Return a single mock comment if no comments found
+#         return {
+#             "comment": {
+#                 "id": "mock_comment_123",
+#                 "text": "Love your content! Can you share more tips about healthy eating?",
+#                 "username": "fitness_enthusiast_22",
+#                 "timestamp": "2024-01-15T14:30:00Z",
+#                 "post_id": "mock_post_456",
+#                 "post_caption": "5 Easy Ways to Start Your Fitness Journey 💪 #fitness #healthylifestyle",
+#                 "profile_pic_url": "https://via.placeholder.com/50"
+#             }
+#         }
 
 @router.post("/comments/suggest-reply")
 async def suggest_comment_reply(
@@ -313,9 +313,7 @@ async def suggest_comment_reply(
         raise HTTPException(status_code=401, detail="User id not found or session expired")
 
     inst_client = InstagramApiClient()
-    # todo: нужен логин адекватный чтобы тестить acess_token, пока дурацкий мок от фронта приходит
-    # inst_client.long_lived_token = access_token
-    inst_client.long_lived_token = settings.TEST_USER_TOKEN
+    inst_client.long_lived_token = access_token
 
     comment_details = inst_client.comment_details(comment_id)
     print('Comment details:', comment_details)
@@ -377,12 +375,8 @@ async def suggest_message_reply(
     if not access_token:
         raise HTTPException(status_code=401, detail="User id not found or session expired")
 
-    # todo:
-    #  нужен логин адекватный чтобы тестить acess_token,
-    #  пока дурацкий мок от фронта приходит
-    #  (inst_client.long_lived_token = access_token)
     inst_client = InstagramApiClient()
-    inst_client.long_lived_token = settings.TEST_USER_TOKEN
+    inst_client.long_lived_token = access_token
 
     message_details = inst_client.get_message_info(message_id)
     print('Message details:', message_details)
@@ -390,7 +384,7 @@ async def suggest_message_reply(
     replies = []
 
     for _ in range(3):
-        print(f'Start new reply: user_id = {user_id}; token = {access_token} ;comment_text = {comment_details["text"]}')
+        print(f'Start new reply: user_id = {user_id}; token = {access_token} ;comment_text = {message_details.message}')
         new_reply = chat_gpt_service.handle_incoming_interaction(
             user_id,
             access_token,
@@ -443,9 +437,13 @@ async def get_latest_messages(session: dict = Depends(get_auth_session)):
 
         new_message_ids = get_new_messages_id(inst_api_client, redis_client)
         new_message_ids = new_message_ids if new_message_ids else []
+        
+        # new_comments = [(get_comment_info_by_id(comment_id).model_dump(), new_flg) for comment_id, new_flg in new_comment_ids]
+        # new_comments.sort(key=lambda comment: comment[0]["timestamp"], reverse=True)
 
-        new_messages = [inst_api_client.get_message_info(msg_id) for msg_id in new_message_ids]
-        new_messages.sort(key=lambda comment: comment.created_time, reverse=True)
+        new_messages = [(inst_api_client.get_message_info(msg_id), new_flg) for msg_id, new_flg in new_message_ids]
+        new_messages.sort(key=lambda message: message[0].created_time, reverse=True)
+        print(f'New messages: {new_messages}')
         return {"messages": new_messages, "is_mock": False}
     except Exception as e:
         print(f"Error fetching Instagram messages: {str(e)}")

@@ -1,13 +1,14 @@
 from app.infrastructure.openai_client import Chat, OpenAIClient
 from app.infrastructure.redis_client import redis_client
 from app.services.instagram_snapshot import describe_instagram_account, LONG_LIVED_TOKEN
+from app.core.config.main_config import settings
 
 
 class ChatGptService:
     def __init__(self):
         self.redis = redis_client
         self.openai_client = OpenAIClient()
-        self.context_expiration_time = 100000   # todo: move to env file
+        self.context_expiration_time = settings.CONTEXT_EXPIRATION_TIME
         self.chat_gpt_prompt = "Появилось новое сообщение/комментарий"  # todo: naming? move to .env?
 
     @staticmethod

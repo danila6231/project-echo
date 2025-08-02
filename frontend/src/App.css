@@ -254,6 +254,10 @@ textarea {
   background: white;
 }
 
+.interaction-item.new-comment {
+  background: #e6ffe6;
+}
+
 .interaction-item:hover {
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);

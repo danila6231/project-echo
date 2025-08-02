@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
-import CommentsListScreen from './components/CommentsListScreen';
-import ReplyScreen from './components/ReplyScreen';
+import Dashboard from './components/Dashboard';
 import Login from './components/Login';
 import axios from './utils/axios';
 
 function App() {
-  const [comment, setComment] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(null);
   const [user, setUser] = useState(null);
 
@@ -57,7 +55,7 @@ function App() {
       <div className="App">
         {isAuthenticated && (
           <header className="App-header">
-            <h1>AI Comment Reply Assistant</h1>
+            <h1>AI Comment & Message Reply Assistant</h1>
             <div className="user-info">
               <span>@{user?.username}</span>
               <button className="logout-button" onClick={handleLogout}>
@@ -78,17 +76,7 @@ function App() {
               path="/" 
               element={
                 isAuthenticated ? (
-                  <CommentsListScreen setComment={setComment} />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              } 
-            />
-            <Route 
-              path="/reply" 
-              element={
-                isAuthenticated ? (
-                  <ReplyScreen comment={comment} />
+                  <Dashboard />
                 ) : (
                   <Navigate to="/login" replace />
                 )
@@ -98,7 +86,7 @@ function App() {
         </main>
         {isAuthenticated && (
           <footer>
-            <p>AI-powered reply suggestions for your Instagram comments</p>
+            <p>AI-powered reply suggestions for your Instagram interactions</p>
           </footer>
         )}
       </div>

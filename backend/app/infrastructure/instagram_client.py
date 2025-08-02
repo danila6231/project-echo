@@ -18,6 +18,13 @@ class InstagramApiClient:
         self.long_lived_token = None
         self.user_id = None
 
+    def __enter__(self):
+        self.__init__()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
     def with_long_lived_token(self, long_lived_token):
         self.long_lived_token = long_lived_token
         return self
@@ -187,7 +194,7 @@ class InstagramApiClient:
         Get detailed information about a specific comment.
         """
         url = f"https://graph.instagram.com/v23.0/{comment_id}"
-        params = {"fields": "id,text,username,timestamp", "access_token": self.long_lived_token}
+        params = {"fields": "id,text,from,media,username,timestamp", "access_token": self.long_lived_token}
         response = requests.get(url, params=params)
         return response.json()
 

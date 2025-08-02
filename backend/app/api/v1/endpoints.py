@@ -1,19 +1,25 @@
+import traceback
+
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Response, Cookie, Depends
 from fastapi.responses import RedirectResponse
 from typing import List, Optional, Annotated
-import secrets
 import httpx
 from urllib.parse import urlencode
 
+from app.infrastructure.redis_client import RedisClient
 from app.models.schemas import ContentIdeasResponse
+from app.services.chatgpt_service import ChatGptService
+from app.services.instagram_snapshot import get_new_comments_id, get_comment_info_by_id, get_new_messages_id
 from app.services.llm_engine import llm_engine
 from app.services.token_manager import token_manager
 from app.services.context_processor import context_processor
 from app.services.session_manager import session_manager
-from app.core.config.main_config import settings
+from app.core.config.main_config import settings, Settings
 from app.infrastructure.instagram_client import InstagramApiClient
 
 router = APIRouter()
+chat_gpt_service = ChatGptService()
+settings = Settings()
 
 def get_auth_session(session_id: Annotated[Optional[str], Cookie()] = None):
     """Helper function to check authentication and return session data."""
@@ -241,125 +247,30 @@ async def logout(response: Response, session_id: Optional[str] = Cookie(None)):
 @router.get("/comments/latest")
 async def get_latest_comments(session: dict = Depends(get_auth_session)):
     """Fetch latest comments from user's Instagram posts."""
-    
-    # Mock data for fallback
-    mock_comments = [
-        {
-            "id": "mock_comment_1",
-            "text": "Love your content! Can you share more tips about healthy eating?",
-            "username": "fitness_enthusiast_22",
-            "timestamp": "2024-01-15T14:30:00Z",
-            "post_id": "mock_post_456",
-            "post_caption": "5 Easy Ways to Start Your Fitness Journey 💪 #fitness #healthylifestyle",
-            "profile_pic_url": "https://via.placeholder.com/50"
-        },
-        {
-            "id": "mock_comment_2",
-            "text": "This is exactly what I needed today! Thank you for the motivation 🙌",
-            "username": "wellness_warrior",
-            "timestamp": "2024-01-15T12:15:00Z",
-            "post_id": "mock_post_457",
-            "post_caption": "Morning routine that changed my life ☀️ #morningroutine #wellness",
-            "profile_pic_url": "https://via.placeholder.com/50"
-        },
-        {
-            "id": "mock_comment_3",
-            "text": "Could you make a video tutorial on this? Would love to learn more!",
-            "username": "curious_learner",
-            "timestamp": "2024-01-15T10:45:00Z",
-            "post_id": "mock_post_458",
-            "post_caption": "My secret to staying productive all day 📈 #productivity #mindset",
-            "profile_pic_url": "https://via.placeholder.com/50"
-        }
-    ]
-    
     try:
         # Initialize Instagram client
-        client = InstagramApiClient()
+        inst_api_client = InstagramApiClient()
+        redis_client = RedisClient()
         
         # Set the long-lived token from session
         access_token = session.get("access_token")
         if not access_token:
-            # Return mock data if no access token
-            return {"comments": mock_comments, "is_mock": True}
+            raise HTTPException(status_code=401, detail="Access token not found or session expired")
         
-        client.long_lived_token = access_token
-        client.user_id = session.get("user_id")
-        
-        # Get user's posts
-        posts_response = client.get_posts()
-        
-        if not posts_response.data:
-            # Return mock data if no posts
-            return {"comments": mock_comments, "is_mock": True}
-        
-        # Collect comments from recent posts
-        all_comments = []
-        posts_with_captions = {}  # Store post captions for later use
-        
-        # Limit to first 5 posts to avoid too many API calls
-        for post in posts_response.data[:5]:
-            try:
-                # Get post details including caption
-                post_url = f"https://graph.instagram.com/v23.0/{post.id}"
-                post_params = {
-                    "fields": "caption,timestamp",
-                    "access_token": client.long_lived_token
-                }
-                
-                import httpx
-                async with httpx.AsyncClient() as http_client:
-                    post_response = await http_client.get(post_url, params=post_params)
-                    if post_response.status_code == 200:
-                        post_data = post_response.json()
-                        posts_with_captions[post.id] = {
-                            "caption": post_data.get("caption", ""),
-                            "timestamp": post_data.get("timestamp", "")
-                        }
-                
-                # Get comments for this post
-                comments_response = client.get_comments(post.id)
-                
-                if comments_response.data:
-                    for comment in comments_response.data:
-                        # Get comment details
-                        comment_url = f"https://graph.instagram.com/v23.0/{comment.id}"
-                        comment_params = {
-                            "fields": "text,username,timestamp",
-                            "access_token": client.long_lived_token
-                        }
-                        
-                        comment_response = await http_client.get(comment_url, params=comment_params)
-                        if comment_response.status_code == 200:
-                            comment_data = comment_response.json()
-                            
-                            all_comments.append({
-                                "id": comment.id,
-                                "text": comment_data.get("text", ""),
-                                "username": comment_data.get("username", ""),
-                                "timestamp": comment_data.get("timestamp", ""),
-                                "post_id": post.id,
-                                "post_caption": posts_with_captions.get(post.id, {}).get("caption", ""),
-                                "profile_pic_url": f"https://graph.instagram.com/v23.0/{comment_data.get('username', '')}/picture"
-                            })
-                            
-            except Exception as e:
-                print(f"Error fetching comments for post {post.id}: {str(e)}")
-                continue
-        
-        if all_comments:
-            # Sort by timestamp (newest first)
-            all_comments.sort(key=lambda x: x["timestamp"], reverse=True)
-            # Return up to 10 latest comments
-            return {"comments": all_comments[:10], "is_mock": False}
-        else:
-            # Return mock data if no comments found
-            return {"comments": mock_comments, "is_mock": True}
+        inst_api_client.long_lived_token = access_token
+        inst_api_client.user_id = session.get("user_id")
+
+        new_comment_ids = get_new_comments_id(inst_api_client, redis_client)
+        new_comment_ids = new_comment_ids if new_comment_ids else []
+
+        new_comments = [get_comment_info_by_id(comment_id).model_dump() for comment_id in new_comment_ids]
+        new_comments.sort(key=lambda comment: comment["timestamp"], reverse=True)
+        return {"comments": new_comments, "is_mock": False}
             
     except Exception as e:
         print(f"Error fetching Instagram comments: {str(e)}")
-        # Return mock data on error
-        return {"comments": mock_comments, "is_mock": True, "error": str(e)}
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
 
 @router.get("/comments/latest-single")
 async def get_latest_comment(session: dict = Depends(get_auth_session)):
@@ -390,26 +301,153 @@ async def suggest_comment_reply(
     session: dict = Depends(get_auth_session)
 ):
     """Generate a reply suggestion based on account analysis."""
+    print(f'Suggest comment session_id: {comment_id}; session: {session}')
+
+    access_token = session.get("access_token")
+    user_id = session.get("user_id")
+
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Access token not found or session expired")
+
+    if not access_token:
+        raise HTTPException(status_code=401, detail="User id not found or session expired")
+
+    inst_client = InstagramApiClient()
+    # todo: нужен логин адекватный чтобы тестить acess_token, пока дурацкий мок от фронта приходит
+    # inst_client.long_lived_token = access_token
+    inst_client.long_lived_token = settings.TEST_USER_TOKEN
+
+    comment_details = inst_client.comment_details(comment_id)
+    print('Comment details:', comment_details)
+
+    replies = []
+
+    for _ in range(3):
+        print(f'Start new reply: user_id = {user_id}; token = {access_token} ;comment_text = {comment_details["text"]}')
+        new_reply = chat_gpt_service.handle_incoming_interaction(
+            user_id,
+            access_token,
+            comment_details['text']
+        )
+        print('New reply to comment:', new_reply)
+        replies.append(new_reply)
+
     # Mock reply suggestion based on "account analysis"
+    # todo:
+    #  нужен логин адекватный чтобы тестить acess_token,
+    #  пока дурацкий мок от фронта приходит
+    #  (inst_client.long_lived_token = access_token)
     return {
         "suggested_reply": {
-            "text": "Thank you so much! 🙏 I'd love to share more healthy eating tips! Check out my latest post on meal prep basics, and stay tuned for a detailed guide on balanced nutrition coming next week! What specific aspect of healthy eating interests you most?",
-            "tone": "friendly and engaging",
+            "text": replies[0],
+            "tone": "todo: убрать поле",
             "includes_cta": True,
             "analysis": {
-                "account_type": "Health & Fitness Influencer",
-                "engagement_strategy": "Building community through questions and valuable content",
-                "personalization": "References recent content and promises future value"
+                "account_type": "todo: убрать поле",
+                "engagement_strategy": "todo: убрать поле",
+                "personalization": "todo: убрать поле"
             }
         },
         "alternative_replies": [
             {
-                "text": "Thanks for the love! 💚 Absolutely! Tomorrow I'm dropping my top 10 healthy eating hacks. Any particular area you're struggling with?",
-                "tone": "casual and helpful"
+                "text": replies[1],
+                "tone": "todo: убрать поле"
             },
             {
-                "text": "I appreciate your support! ✨ I've got a whole series on healthy eating coming up. Follow along and don't miss the meal prep guide this Friday!",
-                "tone": "professional and informative"
+                "text": replies[2],
+                "tone": "todo: убрать поле"
             }
         ]
-    } 
+    }
+
+@router.post("/messages/suggest-reply")
+async def suggest_message_reply(
+    message_id: str = Form(...),
+    session: dict = Depends(get_auth_session)
+):
+    """Generate a message reply suggestion based on account analysis."""
+    print(f'Suggest message; message: {message_id}; session: {session}')
+
+    access_token = session.get("access_token")
+    user_id = session.get("user_id")
+
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Access token not found or session expired")
+
+    if not access_token:
+        raise HTTPException(status_code=401, detail="User id not found or session expired")
+
+    # todo:
+    #  нужен логин адекватный чтобы тестить acess_token,
+    #  пока дурацкий мок от фронта приходит
+    #  (inst_client.long_lived_token = access_token)
+    inst_client = InstagramApiClient()
+    inst_client.long_lived_token = settings.TEST_USER_TOKEN
+
+    message_details = inst_client.get_message_info(message_id)
+    print('Message details:', message_details)
+
+    replies = []
+
+    for _ in range(3):
+        print(f'Start new reply: user_id = {user_id}; token = {access_token} ;comment_text = {comment_details["text"]}')
+        new_reply = chat_gpt_service.handle_incoming_interaction(
+            user_id,
+            access_token,
+            message_details.message
+        )
+        print('New reply to message:', new_reply)
+        replies.append(new_reply)
+
+    # Mock reply suggestion based on "account analysis"
+    # TODO: отдавать просто text, все остальное пока опустить, синкануть с фронтом
+    return {
+        "suggested_reply": {
+            "text": replies[0],
+            "tone": "todo: убрать поле",
+            "includes_cta": True,
+            "analysis": {
+                "account_type": "todo: убрать поле",
+                "engagement_strategy": "todo: убрать поле",
+                "personalization": "todo: убрать поле"
+            }
+        },
+        "alternative_replies": [
+            {
+                "text": replies[1],
+                "tone": "todo: убрать поле"
+            },
+            {
+                "text": replies[2],
+                "tone": "todo: убрать поле"
+            }
+        ]
+    }
+
+
+@router.get("/message/latest")
+async def get_latest_messages(session: dict = Depends(get_auth_session)):
+    """Fetch latest messages from user's Instagram Direct."""
+    try:
+        # Initialize Instagram client
+        inst_api_client = InstagramApiClient()
+        redis_client = RedisClient()
+
+        # Set the long-lived token from session
+        access_token = session.get("access_token")
+        if not access_token:
+            raise HTTPException(status_code=401, detail="Access token not found or session expired")
+
+        inst_api_client.long_lived_token = access_token
+        inst_api_client.user_id = session.get("user_id")
+
+        new_message_ids = get_new_messages_id(inst_api_client, redis_client)
+        new_message_ids = new_message_ids if new_message_ids else []
+
+        new_messages = [inst_api_client.get_message_info(msg_id) for msg_id in new_message_ids]
+        new_messages.sort(key=lambda comment: comment.created_time, reverse=True)
+        return {"messages": new_messages, "is_mock": False}
+    except Exception as e:
+        print(f"Error fetching Instagram messages: {str(e)}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")

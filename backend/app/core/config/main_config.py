@@ -11,10 +11,10 @@ class Settings(BaseModel):
     
     # Development settings
     SKIP_LOGIN: bool = os.getenv("SKIP_LOGIN", "False").lower() == "true"  # Set to True to bypass auth checks
-    TEST_USER_USERNAME: str = os.getenv("TEST_USER_USERNAME", "michael")
+    TEST_USER_USERNAME: str = os.getenv("TEST_USER_USERNAME", "definitely.test.account")
     TEST_USER_ACCOUNT_TYPE: str = os.getenv("TEST_USER_ACCOUNT_TYPE", "business")
-    TEST_USER_ID: str = os.getenv("TEST_USER_ID", "test_user_123")
-    TEST_USER_TOKEN: str = os.getenv("TEST_USER_TOKEN", "test_token")
+    TEST_USER_ID: str = os.getenv("TEST_USER_ID", "17841474962392789")
+    TEST_USER_TOKEN: str = os.getenv("TEST_USER_TOKEN", 'IGAAIJkphRBX5BZAE5FaGNSejhRaWRJZAU14QmRXZAGVMN0stSkNIV1hIQktqZAEQ1enRDNlFiQ0dfbWN6cnVvaklKdmhhX0NqZAFpOd3FrVEtNQlRhclpiSXlBMVNWY1RoZA194VzhGdmU5LVF0VzMzVWZAmbmxR')
     
     # OpenAI settings
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")

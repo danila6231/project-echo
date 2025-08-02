@@ -8,15 +8,18 @@ from urllib.parse import urlencode
 
 from app.infrastructure.redis_client import RedisClient
 from app.models.schemas import ContentIdeasResponse
-from app.services.instagram_snapshot import get_new_comments_id, get_comment_info_by_id
+from app.services.chatgpt_service import ChatGptService
+from app.services.instagram_snapshot import get_new_comments_id, get_comment_info_by_id, get_new_messages_id
 from app.services.llm_engine import llm_engine
 from app.services.token_manager import token_manager
 from app.services.context_processor import context_processor
 from app.services.session_manager import session_manager
-from app.core.config.main_config import settings
+from app.core.config.main_config import settings, Settings
 from app.infrastructure.instagram_client import InstagramApiClient
 
 router = APIRouter()
+chat_gpt_service = ChatGptService()
+settings = Settings()
 
 def get_auth_session(session_id: Annotated[Optional[str], Cookie()] = None):
     """Helper function to check authentication and return session data."""
@@ -298,30 +301,153 @@ async def suggest_comment_reply(
     session: dict = Depends(get_auth_session)
 ):
     """Generate a reply suggestion based on account analysis."""
-
-    # todo: отправлять еще id поста чтобы генерировать ссылку или какое то summary поста
     print(f'Suggest comment session_id: {comment_id}; session: {session}')
 
+    access_token = session.get("access_token")
+    user_id = session.get("user_id")
+
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Access token not found or session expired")
+
+    if not access_token:
+        raise HTTPException(status_code=401, detail="User id not found or session expired")
+
+    inst_client = InstagramApiClient()
+    # todo: нужен логин адекватный чтобы тестить acess_token, пока дурацкий мок от фронта приходит
+    # inst_client.long_lived_token = access_token
+    inst_client.long_lived_token = settings.TEST_USER_TOKEN
+
+    comment_details = inst_client.comment_details(comment_id)
+    print('Comment details:', comment_details)
+
+    replies = []
+
+    for _ in range(3):
+        print(f'Start new reply: user_id = {user_id}; token = {access_token} ;comment_text = {comment_details["text"]}')
+        new_reply = chat_gpt_service.handle_incoming_interaction(
+            user_id,
+            access_token,
+            comment_details['text']
+        )
+        print('New reply to comment:', new_reply)
+        replies.append(new_reply)
+
     # Mock reply suggestion based on "account analysis"
+    # todo:
+    #  нужен логин адекватный чтобы тестить acess_token,
+    #  пока дурацкий мок от фронта приходит
+    #  (inst_client.long_lived_token = access_token)
     return {
         "suggested_reply": {
-            "text": "Thank you so much! 🙏 I'd love to share more healthy eating tips! Check out my latest post on meal prep basics, and stay tuned for a detailed guide on balanced nutrition coming next week! What specific aspect of healthy eating interests you most?",
-            "tone": "friendly and engaging",
+            "text": replies[0],
+            "tone": "todo: убрать поле",
             "includes_cta": True,
             "analysis": {
-                "account_type": "Health & Fitness Influencer",
-                "engagement_strategy": "Building community through questions and valuable content",
-                "personalization": "References recent content and promises future value"
+                "account_type": "todo: убрать поле",
+                "engagement_strategy": "todo: убрать поле",
+                "personalization": "todo: убрать поле"
             }
         },
         "alternative_replies": [
             {
-                "text": "Thanks for the love! 💚 Absolutely! Tomorrow I'm dropping my top 10 healthy eating hacks. Any particular area you're struggling with?",
-                "tone": "casual and helpful"
+                "text": replies[1],
+                "tone": "todo: убрать поле"
             },
             {
-                "text": "I appreciate your support! ✨ I've got a whole series on healthy eating coming up. Follow along and don't miss the meal prep guide this Friday!",
-                "tone": "professional and informative"
+                "text": replies[2],
+                "tone": "todo: убрать поле"
             }
         ]
-    } 
+    }
+
+@router.post("/messages/suggest-reply")
+async def suggest_message_reply(
+    message_id: str = Form(...),
+    session: dict = Depends(get_auth_session)
+):
+    """Generate a message reply suggestion based on account analysis."""
+    print(f'Suggest message; message: {message_id}; session: {session}')
+
+    access_token = session.get("access_token")
+    user_id = session.get("user_id")
+
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Access token not found or session expired")
+
+    if not access_token:
+        raise HTTPException(status_code=401, detail="User id not found or session expired")
+
+    # todo:
+    #  нужен логин адекватный чтобы тестить acess_token,
+    #  пока дурацкий мок от фронта приходит
+    #  (inst_client.long_lived_token = access_token)
+    inst_client = InstagramApiClient()
+    inst_client.long_lived_token = settings.TEST_USER_TOKEN
+
+    message_details = inst_client.get_message_info(message_id)
+    print('Message details:', message_details)
+
+    replies = []
+
+    for _ in range(3):
+        print(f'Start new reply: user_id = {user_id}; token = {access_token} ;comment_text = {comment_details["text"]}')
+        new_reply = chat_gpt_service.handle_incoming_interaction(
+            user_id,
+            access_token,
+            message_details.message
+        )
+        print('New reply to message:', new_reply)
+        replies.append(new_reply)
+
+    # Mock reply suggestion based on "account analysis"
+    # TODO: отдавать просто text, все остальное пока опустить, синкануть с фронтом
+    return {
+        "suggested_reply": {
+            "text": replies[0],
+            "tone": "todo: убрать поле",
+            "includes_cta": True,
+            "analysis": {
+                "account_type": "todo: убрать поле",
+                "engagement_strategy": "todo: убрать поле",
+                "personalization": "todo: убрать поле"
+            }
+        },
+        "alternative_replies": [
+            {
+                "text": replies[1],
+                "tone": "todo: убрать поле"
+            },
+            {
+                "text": replies[2],
+                "tone": "todo: убрать поле"
+            }
+        ]
+    }
+
+
+@router.get("/message/latest")
+async def get_latest_messages(session: dict = Depends(get_auth_session)):
+    """Fetch latest messages from user's Instagram Direct."""
+    try:
+        # Initialize Instagram client
+        inst_api_client = InstagramApiClient()
+        redis_client = RedisClient()
+
+        # Set the long-lived token from session
+        access_token = session.get("access_token")
+        if not access_token:
+            raise HTTPException(status_code=401, detail="Access token not found or session expired")
+
+        inst_api_client.long_lived_token = access_token
+        inst_api_client.user_id = session.get("user_id")
+
+        new_message_ids = get_new_messages_id(inst_api_client, redis_client)
+        new_message_ids = new_message_ids if new_message_ids else []
+
+        new_messages = [inst_api_client.get_message_info(msg_id) for msg_id in new_message_ids]
+        new_messages.sort(key=lambda comment: comment.created_time, reverse=True)
+        return {"messages": new_messages, "is_mock": False}
+    except Exception as e:
+        print(f"Error fetching Instagram messages: {str(e)}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")

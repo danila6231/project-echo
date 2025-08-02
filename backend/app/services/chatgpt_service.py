@@ -15,14 +15,14 @@ class ChatGptService:
         return "inst:" + inst_id
 
     # todo: пока обрабатывает только текст
-    def handle_incoming_interaction(self, receiver_inst_id: str, receiver_long_lived_token, incoming_content: str = None) -> str:
+    def handle_incoming_interaction(self, receiver_inst_id: str, receiver_long_lived_token: str, incoming_content: str = None) -> str:
         """
         Обработать новое сообщение или комментарий и предложить вариант ответа на него.
         """
 
         receiver_inst_id_redis = self.instagram_id_naming_strategy(receiver_inst_id)
-        receiver_chat = self.redis.get(receiver_inst_id_redis)
-        if receiver_chat is None:
+        receiver_chat_bytes = self.redis.get(receiver_inst_id_redis)
+        if receiver_chat_bytes is None:
             receiver_account_description = describe_instagram_account(receiver_long_lived_token)
 
             receiver_chat = Chat().preset_with_instruction(receiver_account_description)
@@ -30,7 +30,8 @@ class ChatGptService:
             ok = self.redis.setex(receiver_inst_id_redis, self.context_expiration_time, receiver_chat.serialize())
             if not ok:
                 raise RuntimeError(f"Failure when store context for user {receiver_inst_id} in Redis")
-
+        else:
+            receiver_chat = Chat().deserialize(receiver_chat_bytes.decode("utf-8"))
         return self.openai_client.prompt(receiver_chat, f"Сгенерируй ответ на личное сообщение/комментарий {incoming_content}")
 
 

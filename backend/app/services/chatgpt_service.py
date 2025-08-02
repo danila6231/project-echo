@@ -13,7 +13,7 @@ class ChatGptService:
 
     @staticmethod
     def instagram_id_naming_strategy(inst_id: str) -> str:
-        return "inst:" + inst_id
+        return "inst:" + str(inst_id)
 
     # todo: пока обрабатывает только текст
     def handle_incoming_interaction(self, receiver_inst_id: str, receiver_long_lived_token: str, incoming_content: str = None) -> str:
@@ -34,23 +34,3 @@ class ChatGptService:
         else:
             receiver_chat = Chat().deserialize(receiver_chat_bytes.decode("utf-8"))
         return self.openai_client.prompt(receiver_chat, f"Сгенерируй ответ на личное сообщение/комментарий {incoming_content}")
-
-
-if __name__ == "__main__":
-    """
-    Тестирование работы chatgpt_service и взаимодействия с redis
-    """
-    chat = Chat().preset_with_instruction("Ты помощник").add_prompt("Привет")
-    json_string = chat.serialize()
-
-    print(json_string)
-
-    new_chat = Chat.deserialize(json_string)
-    print(new_chat.contexts)
-
-    chat_gpt_service = ChatGptService()
-    print(chat_gpt_service.handle_incoming_interaction("100500", LONG_LIVED_TOKEN, "Ты кто, золотой?"))
-    print(redis_client.get(ChatGptService.instagram_id_naming_strategy("100500")))
-
-    redis_client.setex("test_key", 1000, "test_value")
-    print(redis_client.get("test_key"))

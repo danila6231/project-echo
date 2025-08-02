@@ -8,10 +8,6 @@ from app.infrastructure.openai_client import Chat, OpenAIClient
 from app.infrastructure.redis_client import RedisClient
 from app.models.schemas import CommentInfoDto
 
-LONG_LIVED_TOKEN = 'IGAAIJkphRBX5BZAE5FaGNSejhRaWRJZAU14QmRXZAGVMN0stSkNIV1hIQktqZAEQ1enRDNlFiQ0dfbWN6cnVvaklKdmhhX0NqZAFpOd3FrVEtNQlRhclpiSXlBMVNWY1RoZA194VzhGdmU5LVF0VzMzVWZAmbmxR'
-IMAGE_STORAGE = "/Users/ivanleskin/Desktop/inst_images"
-
-
 def post_to_str(post_json) -> str:
     post_text = post_json['caption']
     image_included = post_json['media_type'] == 'IMAGE'
@@ -41,17 +37,6 @@ def dialogs_to_str(dialogs_json, me_id: str) -> str:
     print(f"prompt dialog: {prompt_text}")
     return prompt_text
 
-
-def download_post_image(image_url: str, save_path: str) -> None:
-    """
-    Download the image from a specific post and save it to a local file.
-    """
-    if image_url:
-        response = requests.get(image_url)
-        if response.status_code == 200:
-            with open(save_path, 'wb') as file:
-                file.write(response.content)
-
 def describe_instagram_account(token: str) -> str:
     """
     Description consists of:
@@ -78,8 +63,6 @@ def describe_instagram_account(token: str) -> str:
         post_content = client.post_details(post.id)
         prompt_text = post_to_str(post_content)
         if post_content['media_type'] == 'IMAGE':
-            # just forward link?
-            # download_post_image(post_content['media_url'], f"{IMAGE_STORAGE}/{post.id}.jpeg")
             chat.add_prompt(prompt_text, post_content['media_url'])
 
     detailed_posts_data = [client.post_details(post.id) for post in posts_data.data]

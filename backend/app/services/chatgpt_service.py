@@ -1,6 +1,6 @@
 from app.infrastructure.openai_client import Chat, OpenAIClient
 from app.infrastructure.redis_client import redis_client
-from app.services.instagram_snapshot import describe_instagram_account, LONG_LIVED_TOKEN
+from app.services.instagram_snapshot import describe_instagram_account
 from app.core.config.main_config import settings
 
 

@@ -44,7 +44,7 @@ def describe_instagram_account(token: str) -> str:
     2) replies to comments
     3) private dialogs
     """
-
+    # TODO: передавать клиент вместо токена
     client = InstagramApiClient().with_long_lived_token(token)
     
     # Fetch posts data
@@ -156,28 +156,26 @@ def get_new_messages_id(api_client: InstagramApiClient, redis_client: RedisClien
 
 
 #TODO
-def get_comment_info_by_id(comment_id: str) -> CommentInfoDto:
-    with InstagramApiClient() as instagram_client:
-        instagram_client.long_lived_token = LONG_LIVED_TOKEN
-        comment_detailed = instagram_client.comment_details(comment_id)
-        print(comment_detailed)
-        post_of_comment = instagram_client.post_details(comment_detailed["media"]["id"])
-        print(post_of_comment)
+def get_comment_info_by_id(instagram_client: InstagramApiClient, comment_id: str) -> CommentInfoDto:
+    comment_detailed = instagram_client.comment_details(comment_id)
+    print(comment_detailed)
+    post_of_comment = instagram_client.post_details(comment_detailed["media"]["id"])
+    print(post_of_comment)
 
-        data = {
-            "id": comment_id,
-            "text": comment_detailed["text"],
-            "username": comment_detailed["from"]["username"],
-            "timestamp": comment_detailed["timestamp"],
-            "post_id": comment_detailed["media"]["id"],
-            "post_caption": post_of_comment["caption"],
-            "profile_pic_url": post_of_comment["media_url"]
-        }
+    data = {
+        "id": comment_id,
+        "text": comment_detailed["text"],
+        "username": comment_detailed["from"]["username"],
+        "timestamp": comment_detailed["timestamp"],
+        "post_id": comment_detailed["media"]["id"],
+        "post_caption": post_of_comment["caption"],
+        "profile_pic_url": post_of_comment["media_url"]
+    }
     return CommentInfoDto(**data)
 
 
 if __name__ == '__main__':
     inst_api_client = InstagramApiClient()
-    inst_api_client.long_lived_token = LONG_LIVED_TOKEN
+    inst_api_client.long_lived_token = ""
     redis_client = RedisClient()
     print(get_new_messages_id(inst_api_client, redis_client))

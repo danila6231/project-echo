@@ -263,7 +263,7 @@ async def get_latest_comments(session: dict = Depends(get_auth_session)):
         new_comment_ids = get_new_comments_id(inst_api_client, redis_client)
         new_comment_ids = new_comment_ids if new_comment_ids else []
 
-        new_comments = [(get_comment_info_by_id(comment_id).model_dump(), new_flg) for comment_id, new_flg in new_comment_ids]
+        new_comments = [(get_comment_info_by_id(inst_api_client, comment_id).model_dump(), new_flg) for comment_id, new_flg in new_comment_ids]
         new_comments.sort(key=lambda comment: comment[0]["timestamp"], reverse=True)
         return {"comments": new_comments, "is_mock": False}
             

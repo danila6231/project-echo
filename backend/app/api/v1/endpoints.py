@@ -441,10 +441,10 @@ async def get_latest_messages(session: dict = Depends(get_auth_session)):
         # new_comments = [(get_comment_info_by_id(comment_id).model_dump(), new_flg) for comment_id, new_flg in new_comment_ids]
         # new_comments.sort(key=lambda comment: comment[0]["timestamp"], reverse=True)
 
-        new_messages = [(inst_api_client.get_message_info(msg_id), new_flg) for msg_id, new_flg in new_message_ids]
-        new_messages.sort(key=lambda message: message[0].created_time, reverse=True)
-        print(f'New messages: {new_messages}')
-        return {"messages": new_messages, "is_mock": False}
+        new_and_stale_messages = [(inst_api_client.get_message_info(msg_id), new_flg) for msg_id, new_flg in new_message_ids]
+        new_and_stale_messages.sort(key=lambda message: message[0].created_time, reverse=True)
+        print(f'New messages: {new_and_stale_messages}')
+        return {"messages": new_and_stale_messages, "is_mock": False}
     except Exception as e:
         print(f"Error fetching Instagram messages: {str(e)}")
         traceback.print_exc()

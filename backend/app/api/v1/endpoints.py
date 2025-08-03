@@ -206,7 +206,7 @@ async def instagram_callback(code: str):
                 value=session_id,
                 httponly=True,
                 secure=settings.COOKIE_SECURE,
-                samesite="none" if settings.COOKIE_SECURE else "lax",
+                samesite="lax",
                 max_age=settings.SESSION_EXPIRY
             )
             

@@ -12,7 +12,9 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",  # Local development
         "https://project-echo-stage.vercel.app",  # stage frontend
-        "https://project-echo-inky.vercel.app" # Production frontend
+        "https://project-echo-inky.vercel.app", # Production frontend
+        "https://replify.to", # Production frontend
+        "https://stage.replify.to" # stage frontend
     ],
     allow_credentials=True,
     allow_methods=["*"],

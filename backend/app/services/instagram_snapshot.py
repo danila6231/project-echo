@@ -8,6 +8,7 @@ from app.infrastructure.openai_client import Chat, OpenAIClient
 from app.infrastructure.redis_client import RedisClient
 from app.models.schemas import CommentInfoDto
 
+
 def post_to_str(post_json) -> str:
     post_text = post_json['caption']
     image_included = post_json['media_type'] == 'IMAGE'
@@ -37,6 +38,7 @@ def dialogs_to_str(dialogs_json, me_id: str) -> str:
     print(f"prompt dialog: {prompt_text}")
     return prompt_text
 
+
 def describe_instagram_account(token: str) -> str:
     """
     Description consists of:
@@ -46,7 +48,7 @@ def describe_instagram_account(token: str) -> str:
     """
     # TODO: передавать клиент вместо токена
     client = InstagramApiClient().with_long_lived_token(token)
-    
+
     # Fetch posts data
     posts_data = client.get_posts()
     user_info = client.get_me_info()
@@ -57,7 +59,7 @@ def describe_instagram_account(token: str) -> str:
     chat.preset_with_instruction("Describe instagram account by next provided posts, comments and private dialogs.")
 
     gpt_client.prompt(chat)
-    
+
     # Fetch detailed posts data
     for post in posts_data.data:
         post_content = client.post_details(post.id)
@@ -66,7 +68,7 @@ def describe_instagram_account(token: str) -> str:
             chat.add_prompt(prompt_text, post_content['media_url'])
 
     detailed_posts_data = [client.post_details(post.id) for post in posts_data.data]
-    
+
     # Fetch detailed comments for each post
     for post in posts_data.data:
         comments = client.get_comments(post.id)
@@ -74,10 +76,10 @@ def describe_instagram_account(token: str) -> str:
             comment_detailed = client.comment_details(comment.id)
             prompt_text = comment_to_str(comment_detailed)
             chat.add_prompt(prompt_text)
-    
+
     # Fetch private dialogs
     private_dialogs = client.get_conversations()
-    
+
     # Fetch detailed private dialogs
     detailed_private_dialogs = [client.private_dialog_details(dialog.id) for dialog in private_dialogs.data]
 
@@ -96,6 +98,7 @@ def describe_instagram_account(token: str) -> str:
 class CommentInfo(NamedTuple):
     text: str
     new_flg: bool
+
 
 def get_new_comments_id(api_client: InstagramApiClient, redis_client: RedisClient) -> List[CommentInfo]:
     """Retrieve not handled Instagram comments."""
@@ -125,8 +128,10 @@ class MessageView(NamedTuple):
     text: str
     new_flg: bool
 
+
 def get_new_messages_id(api_client: InstagramApiClient, redis_client: RedisClient) -> List[MessageView]:
     all_messages = []
+    new_messages = []
     # Fetch private dialogs
     private_dialogs = api_client.get_conversations()
 

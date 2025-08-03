@@ -11,7 +11,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",  # Local development
-        "https://project-echo-git-login-flow-danila6231s-projects.vercel.app",  # Preview frontend
+        "https://project-echo-stage.vercel.app",  # stage frontend
         "https://project-echo-inky.vercel.app" # Production frontend
     ],
     allow_credentials=True,

@@ -296,9 +296,11 @@ async def get_latest_comments(session: dict = Depends(get_auth_session)):
 
 @router.post("/comments/suggest-reply")
 async def suggest_comment_reply(
+    post_id: str = Form(...),
     comment_id: str = Form(...),
     session: dict = Depends(get_auth_session)
 ):
+    ## TODO: Add the post_id to the query context
     """Generate a reply suggestion based on account analysis."""
     print(f'Suggest comment session_id: {comment_id}; session: {session}')
 
@@ -315,6 +317,7 @@ async def suggest_comment_reply(
     inst_client.long_lived_token = access_token
 
     comment_details = inst_client.comment_details(comment_id)
+    
     # print('Comment details:', comment_details)
 
     replies = []
@@ -324,7 +327,8 @@ async def suggest_comment_reply(
         new_reply = chat_gpt_service.handle_incoming_interaction(
             user_id,
             access_token,
-            comment_details['text']
+            comment_details['text'],
+            
         )
         # print('New reply to comment:', new_reply)
         replies.append(new_reply)
@@ -387,7 +391,7 @@ async def suggest_message_reply(
         new_reply = chat_gpt_service.handle_incoming_interaction(
             user_id,
             access_token,
-            message_details.message
+            f"Direct message: {message_details.message}"
         )
         # print('New reply to message:', new_reply)
         replies.append(new_reply)

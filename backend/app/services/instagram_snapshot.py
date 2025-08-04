@@ -14,7 +14,7 @@ def post_to_str(post_json) -> str:
     image_included = post_json['media_type'] == 'IMAGE'
     prompt_text = f'Instagram post with text: "{post_text}"'
     if image_included:
-        prompt_text += " and related image"
+        prompt_text += f" and related image: {post_json['media_url']}"
     # print(f"prompt post: {prompt_text}")
     return prompt_text
 
@@ -56,26 +56,25 @@ def describe_instagram_account(token: str) -> str:
     # Start providing context
     gpt_client = OpenAIClient()
     chat = Chat()
-    chat.preset_with_instruction("Describe instagram account by next provided posts, comments and private dialogs.")
 
-    gpt_client.prompt(chat)
-
+    content_pieces = []
+    post_images = []
     # Fetch detailed posts data
     for post in posts_data.data:
         post_content = client.post_details(post.id)
         prompt_text = post_to_str(post_content)
         if post_content['media_type'] == 'IMAGE':
-            chat.add_prompt(prompt_text, post_content['media_url'])
-
-    detailed_posts_data = [client.post_details(post.id) for post in posts_data.data]
-
-    # Fetch detailed comments for each post
-    for post in posts_data.data:
+            post_images.append(post_content['media_url'])
+        content_pieces.append(prompt_text)
+        
+        content_pieces.append("Comments for the post:")
         comments = client.get_comments(post.id)
         for comment in comments.data:
             comment_detailed = client.comment_details(comment.id)
             prompt_text = comment_to_str(comment_detailed)
-            chat.add_prompt(prompt_text)
+            content_pieces.append(prompt_text)
+
+        
 
     # Fetch private dialogs
     private_dialogs = client.get_conversations()
@@ -85,11 +84,58 @@ def describe_instagram_account(token: str) -> str:
 
     # print(f"dialogs: {detailed_private_dialogs}")
     prompt_text = dialogs_to_str(detailed_private_dialogs, user_info.user_id)
-    chat.add_prompt(prompt_text)
+    content_pieces.append(prompt_text)
 
-    description = gpt_client.prompt(chat)
+    content_pieces = "\n".join(content_pieces)
+    
+    chat.preset_with_instruction(f"""
+You are given a concatenated string containing past Instagram posts, comments, captions, and private messages from a single account:
+<START_OF_CONTENT>
+{content_pieces}
+Post images are attached as files in the first user message.
+<END_OF_CONTENT>
+Your task is to extract the identity of this account. You will use this summary to guide your responses to future comments or DMs in a tone and style consistent with the account.
 
-    return description
+Please be sure to extract the following:
+
+1. Account Topic  
+What is the main theme or subject of this Instagram account?  
+(e.g., fitness, baking, digital art, small business marketing tips, etc.)
+
+2. Audience Description  
+What type of audience is this account targeting?  
+(e.g., amateur bakers, Gen Z creatives, small business owners, etc.)
+
+3. Writing Style & Tone  
+What is the tone and writing style used in captions and replies?  
+Include examples of quirks, emojis, catchphrases, humor, or specific expressions.  
+(e.g., friendly and casual with lots of 🍞 emojis and bread puns)
+
+4. Typical Topics & Themes  
+List a few recurring content categories or subjects discussed.
+
+5. Notable Values or Opinions  
+Does the account express any opinions, beliefs, or consistent values?  
+(e.g., promoting sustainability, encouraging beginners, etc.)
+
+6. Call-to-Actions / Business Goals (if any)  
+Does the account try to sell something, promote a brand, grow engagement, or offer any services?
+
+7. Voice Emulation Summary  
+Brief understanding on how to replicate the account’s voice in future replies.  
+(e.g., “When replying to messages, use playful tone, include emojis, ask friendly questions, never sound too formal.”)
+
+
+In the queries you’ll be asked to write replies to a provided comment or message that was sent to the account.
+
+General recommendations:
+1) Never mention that you are AI, your responses will NEVER include warnings, disclaimers, etc. such as, but not limited to, "As an Al", "As a large language mode" "As an artificial intelligence, I don't have feelings or emotions" The user already knows you are an LLM. Just skip to the answer.
+2) ONLY INCLUDE THE EXACTS SUGGESTED RESPONSE in your output. Do not include any other text.
+3) Never make any promises or guarantees that are not explicitly stated in the description of the account.
+    """)
+
+    chat.preset_images(post_images)
+    return chat
 
 
 #TODO

@@ -16,21 +16,20 @@ class ChatGptService:
         return "inst:" + str(inst_id)
 
     # todo: currently only processes text
-    def handle_incoming_interaction(self, receiver_inst_id: str, receiver_long_lived_token: str, incoming_content: str = None) -> str:
+    def handle_incoming_interaction(self, receiver_inst_id: str, receiver_long_lived_token: str, incoming_text: str = None, incoming_image: str = None) -> str:
         """
         Process a new message or comment and suggest a response to it.
         """
 
         receiver_inst_id_redis = self.instagram_id_naming_strategy(receiver_inst_id)
         receiver_chat_bytes = self.redis.get(receiver_inst_id_redis)
+        # receiver_chat_bytes = None
         if receiver_chat_bytes is None:
-            receiver_account_description = describe_instagram_account(receiver_long_lived_token)
-
-            receiver_chat = Chat().preset_with_instruction(receiver_account_description)
-
+            receiver_chat = describe_instagram_account(receiver_long_lived_token)
+            # print(receiver_chat._context)
             ok = self.redis.setex(receiver_inst_id_redis, self.context_expiration_time, receiver_chat.serialize())
             if not ok:
                 raise RuntimeError(f"Failure when store context for user {receiver_inst_id} in Redis")
         else:
             receiver_chat = Chat().deserialize(receiver_chat_bytes.decode("utf-8"))
-        return self.openai_client.prompt(receiver_chat, f"Generate a response to the direct message/comment: {incoming_content}")
+        return self.openai_client.prompt(receiver_chat, f"Incoming direct message/comment: {incoming_text}", incoming_image)

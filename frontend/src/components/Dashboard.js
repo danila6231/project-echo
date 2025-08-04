@@ -67,6 +67,13 @@ function Dashboard() {
           const formData = new FormData();
           formData.append(`${type === 'comment' ? 'comment_id' : 'message_id'}`, itemId);
           
+          if (type === 'comment') {
+            const comment = comments.find(([c]) => c.id === itemId);
+            if (comment) {
+              formData.append('post_id', comment[0].post_id);
+            }
+          }
+          
           const endpoint = type === 'comment' 
             ? '/api/v1/comments/suggest-reply' 
             : '/api/v1/messages/suggest-reply';

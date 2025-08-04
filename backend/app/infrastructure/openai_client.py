@@ -15,7 +15,8 @@ def _encode_image(image_path: str) -> str:
 
 
 class ChatJSON(BaseModel):
-    context: List[Dict[str, str]] = Field(..., title="Context")
+    # context: List[Dict[str, str]] = Field(..., title="Context")
+    context: List = Field(..., title="Context")
 
 
 class Chat:
@@ -24,20 +25,27 @@ class Chat:
 
     # TODO: staticmethod? builder?
     def preset_with_instruction(self, preset: str):
-        self._context.append({'role': 'system', 'content': preset})
+        content = [{"type": "input_text", "text": preset}]
+        self._context.append({'role': 'system', 'content': content})
         return self
 
-    def add_prompt(self, prompt: str, image_url: str = None):
-        if image_url:
-            self._context.append({'role': 'user', "content": [
-                {"type": "input_text", "text": prompt},
+    def preset_images(self, image_list: List[str] = None):
+        content = []
+        for image in image_list:
+            content.append({"type": "input_image", "image_url": image})
+        self._context.append({'role': 'user', 'content': content})
+        return self
+    
+    def add_prompt(self, prompt: str = None, image_url: str = None, role: str = 'user'):
+        if prompt is not None:
+            self._context.append({'role': role, 'content': prompt})
+        if image_url is not None:
+            self._context.append({'role': role, "content": [
                 {
                     "type": "input_image",
                     "image_url": image_url,
                 },
             ]})
-        else:
-            self._context.append({'role': 'user', 'content': prompt})
         return self
 
     def add_response(self, response: str):
@@ -69,13 +77,13 @@ class Chat:
 class OpenAIClient:
     def __init__(self, model=settings.LLM_MODEL):
         self.model = model
-        self.client = openai.OpenAI(api_key="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")
+        self.client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
         self.chats: Dict[str, Chat] = {}
 
     def prompt(self, chat: Chat, text: str = None, image_url: str = None) -> str:
         if text:
             chat.add_prompt(text, image_url)
-
+        # print(chat.contexts)
         response = self.client.responses.create(
             model=self.model,
             input=chat.contexts

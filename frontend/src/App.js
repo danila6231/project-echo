@@ -4,6 +4,7 @@ import './App.css';
 import Dashboard from './components/Dashboard';
 import Login from './components/Login';
 import axios from './utils/axios';
+import logo from './assets/logo.png';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(null);
@@ -55,7 +56,10 @@ function App() {
       <div className="App">
         {isAuthenticated && (
           <header className="App-header">
-            <h1>AI Comment & Message Reply Assistant</h1>
+            <div className="header-content">
+              <img src={logo} alt="Replify Logo" className="app-logo" />
+              <h1>Replify AI</h1>
+            </div>
             <div className="user-info">
               <span>@{user?.username}</span>
               <button className="logout-button" onClick={handleLogout}>

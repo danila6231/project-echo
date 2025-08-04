@@ -141,7 +141,6 @@ async def instagram_login():
         "response_type": "code"
     }
     auth_url = f"https://www.instagram.com/oauth/authorize?{urlencode(params)}"
-    print(auth_url)
     return {"auth_url": auth_url}
 
 # TODO авторизация:
@@ -316,7 +315,7 @@ async def suggest_comment_reply(
     inst_client.long_lived_token = access_token
 
     comment_details = inst_client.comment_details(comment_id)
-    print('Comment details:', comment_details)
+    # print('Comment details:', comment_details)
 
     replies = []
 
@@ -327,7 +326,7 @@ async def suggest_comment_reply(
             access_token,
             comment_details['text']
         )
-        print('New reply to comment:', new_reply)
+        # print('New reply to comment:', new_reply)
         replies.append(new_reply)
 
     # Mock reply suggestion based on "account analysis"
@@ -379,7 +378,7 @@ async def suggest_message_reply(
     inst_client.long_lived_token = access_token
 
     message_details = inst_client.get_message_info(message_id)
-    print('Message details:', message_details)
+    # print('Message details:', message_details)
 
     replies = []
 
@@ -390,7 +389,7 @@ async def suggest_message_reply(
             access_token,
             message_details.message
         )
-        print('New reply to message:', new_reply)
+        # print('New reply to message:', new_reply)
         replies.append(new_reply)
 
     # Mock reply suggestion based on "account analysis"
@@ -443,7 +442,7 @@ async def get_latest_messages(session: dict = Depends(get_auth_session)):
 
         new_and_stale_messages = [(inst_api_client.get_message_info(msg_id), new_flg) for msg_id, new_flg in new_message_ids]
         new_and_stale_messages.sort(key=lambda message: message[0].created_time, reverse=True)
-        print(f'New messages: {new_and_stale_messages}')
+        # print(f'New messages: {new_and_stale_messages}')
         return {"messages": new_and_stale_messages, "is_mock": False}
     except Exception as e:
         print(f"Error fetching Instagram messages: {str(e)}")

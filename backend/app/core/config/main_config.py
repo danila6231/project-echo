@@ -46,6 +46,9 @@ class Settings(BaseModel):
     
     # Frontend URL
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    
+    # LLM Settings
+    LLM_MODEL: str = os.getenv("LLM_MODEL")
 
 # Create global settings object
 settings = Settings() 

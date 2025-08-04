@@ -1,10 +1,42 @@
 .login-container {
   min-height: 100vh;
+  width: 100vw;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 20px;
+  box-sizing: border-box;
+  position: fixed;
+  top: 0;
+  left: 0;
+  margin: 0;
+}
+
+.title-container {
+  display: flex;
+  flex-direction: column;  /* Stack items vertically */
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 24px;  /* Increased margin for better spacing */
+  position: relative;
+  white-space: nowrap;
+}
+
+.login-logo {
+  width: 128px;
+  height: 128px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+  transition: transform 0.3s ease;
+  mix-blend-mode: multiply;
+  background: transparent;
+  margin-bottom: 8px;  /* Add some space between logo and text */
+}
+
+.login-logo:hover {
+  transform: scale(1.05);  /* Subtle grow effect on hover */
 }
 
 .login-card {
@@ -12,16 +44,18 @@
   border-radius: 16px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   padding: 48px;
-  max-width: 420px;
-  width: 100%;
+  min-width: 420px;  /* Changed from max-width to min-width */
+  width: auto;  /* Allow natural width */
+  max-width: 90%;  /* Prevent too wide on large screens */
   text-align: center;
 }
 
 .login-card h1 {
   color: #2d3748;
-  margin-bottom: 12px;
-  font-size: 32px;
+  margin-bottom: 0;
+  font-size: 36px;  /* Increased font size to match larger logo */
   font-weight: 700;
+  white-space: nowrap;  /* Ensure text stays in one line */
 }
 
 .login-card p {
@@ -48,11 +82,13 @@
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;  /* Changed from flex to inline-flex */
   align-items: center;
   justify-content: center;
   gap: 12px;
-  width: 100%;
+  width: auto;  /* Changed from 100% to auto */
+  min-width: min-content;  /* Ensure button fits content */
+  margin: 0 auto;  /* Center the button */
   transition: transform 0.2s, box-shadow 0.2s;
 }
 

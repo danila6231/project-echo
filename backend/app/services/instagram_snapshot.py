@@ -15,14 +15,14 @@ def post_to_str(post_json) -> str:
     prompt_text = f'Instagram post with text: "{post_text}"'
     if image_included:
         prompt_text += " and related image"
-    print(f"prompt post: {prompt_text}")
+    # print(f"prompt post: {prompt_text}")
     return prompt_text
 
 
 def comment_to_str(comment_json) -> str:
     comment_text = comment_json['text']
     prompt_text = f'Comment from user: "{comment_text}"'
-    print(f"prompt comment: {prompt_text}")
+    # print(f"prompt comment: {prompt_text}")
     return prompt_text
 
 
@@ -35,7 +35,7 @@ def dialogs_to_str(dialogs_json, me_id: str) -> str:
                 prompt_text += f"{message['message']} from user to {message['to']['data'][0]['username']}\n"
             else:
                 prompt_text += f"{message['message']} from {message['from']['username']} to user\n"
-    print(f"prompt dialog: {prompt_text}")
+    # print(f"prompt dialog: {prompt_text}")
     return prompt_text
 
 
@@ -83,7 +83,7 @@ def describe_instagram_account(token: str) -> str:
     # Fetch detailed private dialogs
     detailed_private_dialogs = [client.private_dialog_details(dialog.id) for dialog in private_dialogs.data]
 
-    print(f"dialogs: {detailed_private_dialogs}")
+    # print(f"dialogs: {detailed_private_dialogs}")
     prompt_text = dialogs_to_str(detailed_private_dialogs, user_info.user_id)
     chat.add_prompt(prompt_text)
 
@@ -163,9 +163,9 @@ def get_new_messages_id(api_client: InstagramApiClient, redis_client: RedisClien
 #TODO
 def get_comment_info_by_id(instagram_client: InstagramApiClient, comment_id: str) -> CommentInfoDto:
     comment_detailed = instagram_client.comment_details(comment_id)
-    print(comment_detailed)
+    # print(comment_detailed)
     post_of_comment = instagram_client.post_details(comment_detailed["media"]["id"])
-    print(post_of_comment)
+    # print(post_of_comment)
 
     data = {
         "id": comment_id,

@@ -1,8 +1,9 @@
 from pydantic import BaseModel
 import os
+# unused now
 
 class LLMConfig(BaseModel):
-    LLM_MODEL: str = os.getenv("LLM_MODEL", "gpt-4.1-nano-2025-04-14")
+    LLM_MODEL: str = os.getenv("LLM_MODEL")
 
     MOCK: bool = False
 

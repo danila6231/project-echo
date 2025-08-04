@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import axios from '../utils/axios';
 
 function Dashboard() {
-  const [activeTab, setActiveTab] = useState('comments');
   const [comments, setComments] = useState([]);
   const [messages, setMessages] = useState([]);
   const [isLoadingComments, setIsLoadingComments] = useState(true);
@@ -16,8 +15,7 @@ function Dashboard() {
 
   useEffect(() => {
     fetchLatestComments();
-    // Set messages loading to false after initial load since we lazy load messages
-    setIsLoadingMessages(false);
+    fetchLatestMessages();
   }, []);
 
   const fetchLatestComments = async () => {
@@ -50,12 +48,7 @@ function Dashboard() {
     }
   };
 
-  const handleTabChange = (tab) => {
-    setActiveTab(tab);
-    if (tab === 'messages' && messages.length === 0 && !isLoadingMessages) {
-      fetchLatestMessages();
-    }
-  };
+
 
   const toggleReplySuggestions = async (itemId, type) => {
     const key = `${type}-${itemId}`;
@@ -128,257 +121,233 @@ function Dashboard() {
     }
   };
 
-  const renderCommentItem = (comment) => {
-    const [commentData, isNew] = comment;
-    const key = `comment-${commentData.id}`;
-    const isExpanded = expandedItems[key];
-    const isLoadingReply = loadingReplies[key];
-    const replies = suggestedReplies[key];
-
-    return (
-      <div key={commentData.id} className={`interaction-item ${isNew ? 'new-comment' : ''}`}>
-        <div className="interaction-header">
-          <img 
-            src={commentData.profile_pic_url} 
-            alt={commentData.username}
-            className="profile-pic"
-            onError={(e) => { e.target.src = 'https://via.placeholder.com/40'; }}
-          />
-          <div className="interaction-info">
-            <h4>@{commentData.username}</h4>
-            <span className="timestamp">{formatTimestamp(commentData.timestamp)}</span>
-          </div>
-        </div>
-        
-        <div className="interaction-content">
-          <p className="post-context">On your post: "{commentData.post_caption}"</p>
-          <p className="interaction-text">{commentData.text}</p>
-        </div>
-
-        <div className="interaction-actions">
-          <button 
-            className="btn-secondary"
-            onClick={() => toggleReplySuggestions(commentData.id, 'comment')}
-          >
-            {isExpanded ? '▼ Hide' : '▶ Show'} Reply Suggestions
-          </button>
-        </div>
-
-        {isExpanded && (
-          <div className="reply-suggestions">
-            {isLoadingReply ? (
-              <div className="loading">
-                <div className="spinner"></div>
-                <p>Generating AI replies...</p>
-              </div>
-            ) : replies ? (
-              <>
-                <div className="suggested-reply primary">
-                  <h5>Suggested Reply:</h5>
-                  <textarea
-                    className="reply-textarea"
-                    value={getEditedReplyText(key, 'main', replies.suggested_reply.text)}
-                    onChange={(e) => handleEditReply(key, 'main', e.target.value)}
-                  />
-                  <button
-                    className="btn-copy"
-                    onClick={() => copyToClipboard(getEditedReplyText(key, 'main', replies.suggested_reply.text), `${key}-main`)}
-                  >
-                    {copiedIndex === `${key}-main` ? '✓ Copied!' : 'Copy'}
-                  </button>
-                </div>
-
-                {replies.alternative_replies && replies.alternative_replies.length > 0 && (
-                  <div className="alternative-replies">
-                    <h5>Alternative Replies:</h5>
-                    {replies.alternative_replies.map((reply, index) => (
-                      <div key={index} className="suggested-reply">
-                        <textarea
-                          className="reply-textarea"
-                          value={getEditedReplyText(key, index, reply.text)}
-                          onChange={(e) => handleEditReply(key, index, e.target.value)}
-                        />
-                        <button
-                          className="btn-copy"
-                          onClick={() => copyToClipboard(getEditedReplyText(key, index, reply.text), `${key}-${index}`)}
-                        >
-                          {copiedIndex === `${key}-${index}` ? '✓ Copied!' : 'Copy'}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            ) : null}
-          </div>
-        )}
-      </div>
-    );
+  const getCombinedAndSortedItems = () => {
+    const commentItems = comments.map(comment => ({
+      data: comment,
+      type: 'comment',
+      sortDate: new Date(comment[0].timestamp)
+    }));
+    
+    const messageItems = messages.map(message => ({
+      data: message,
+      type: 'message', 
+      sortDate: new Date(message[0].created_time)
+    }));
+    
+    return [...commentItems, ...messageItems].sort((a, b) => b.sortDate - a.sortDate);
   };
 
-  const renderMessageItem = (message) => {
-    const [messageData, isNew] = message;
-    const key = `message-${messageData.id}`;
-    const isExpanded = expandedItems[key];
-    const isLoadingReply = loadingReplies[key];
-    const replies = suggestedReplies[key];
-    const fromUsername = messageData.from?.username || 'Unknown';
-    // console.log(messageData);
+  const renderItem = (item) => {
+    if (item.type === 'comment') {
+      const [commentData, isNew] = item.data;
+      const key = `comment-${commentData.id}`;
+      const isExpanded = expandedItems[key];
+      const isLoadingReply = loadingReplies[key];
+      const replies = suggestedReplies[key];
 
-    return (
-      <div key={messageData.id} className={`interaction-item ${isNew ? 'new-comment' : ''}`}>
-        <div className="interaction-header">
-          {/* <img 
-            src={'https://via.placeholder.com/40'} 
-            alt={fromUsername}
-            className="profile-pic"
-            onError={(e) => { e.target.src = 'https://via.placeholder.com/40'; }}
-          /> */}
-          <div className="interaction-info">
-            <h4>@{fromUsername}</h4>
-            <span className="timestamp">{formatTimestamp(messageData.created_time)}</span>
+      return (
+        <div key={commentData.id} className={`interaction-item ${isNew ? 'new-comment' : ''}`}>
+          <div className="interaction-header">
+            <span className="item-type-label comment-label">Comment</span>
+            <img 
+              src={commentData.profile_pic_url} 
+              alt={commentData.username}
+              className="profile-pic"
+              onError={(e) => { e.target.src = 'https://via.placeholder.com/40'; }}
+            />
+            <div className="interaction-info">
+              <h4>@{commentData.username}</h4>
+              <span className="timestamp">{formatTimestamp(commentData.timestamp)}</span>
+            </div>
           </div>
-        </div>
-        
-        <div className="interaction-content">
-          <p className="interaction-text">{messageData.message}</p>
-        </div>
+          
+          <div className="interaction-content">
+            <p className="post-context">On your post: "{commentData.post_caption}"</p>
+            <p className="interaction-text">{commentData.text}</p>
+          </div>
 
-        <div className="interaction-actions">
-          <button 
-            className="btn-secondary"
-            onClick={() => toggleReplySuggestions(messageData.id, 'message')}
-          >
-            {isExpanded ? '▼ Hide' : '▶ Show'} Reply Suggestions
-          </button>
-        </div>
+          <div className="interaction-actions">
+            <button 
+              className="btn-secondary"
+              onClick={() => toggleReplySuggestions(commentData.id, 'comment')}
+            >
+              {isExpanded ? '▼ Hide' : '▶ Show'} Reply Suggestions
+            </button>
+          </div>
 
-        {isExpanded && (
-          <div className="reply-suggestions">
-            {isLoadingReply ? (
-              <div className="loading">
-                <div className="spinner"></div>
-                <p>Generating AI replies...</p>
-              </div>
-            ) : replies ? (
-              <>
-                <div className="suggested-reply primary">
-                  <h5>Suggested Reply:</h5>
-                  <textarea
-                    className="reply-textarea"
-                    value={getEditedReplyText(key, 'main', replies.suggested_reply.text)}
-                    onChange={(e) => handleEditReply(key, 'main', e.target.value)}
-                  />
-                  <button
-                    className="btn-copy"
-                    onClick={() => copyToClipboard(getEditedReplyText(key, 'main', replies.suggested_reply.text), `${key}-main`)}
-                  >
-                    {copiedIndex === `${key}-main` ? '✓ Copied!' : 'Copy'}
-                  </button>
+          {isExpanded && (
+            <div className="reply-suggestions">
+              {isLoadingReply ? (
+                <div className="loading">
+                  <div className="spinner"></div>
+                  <p>Generating AI replies...</p>
                 </div>
-
-                {replies.alternative_replies && replies.alternative_replies.length > 0 && (
-                  <div className="alternative-replies">
-                    <h5>Alternative Replies:</h5>
-                    {replies.alternative_replies.map((reply, index) => (
-                      <div key={index} className="suggested-reply">
-                        <textarea
-                          className="reply-textarea"
-                          value={getEditedReplyText(key, index, reply.text)}
-                          onChange={(e) => handleEditReply(key, index, e.target.value)}
-                        />
-                        <button
-                          className="btn-copy"
-                          onClick={() => copyToClipboard(getEditedReplyText(key, index, reply.text), `${key}-${index}`)}
-                        >
-                          {copiedIndex === `${key}-${index}` ? '✓ Copied!' : 'Copy'}
-                        </button>
-                      </div>
-                    ))}
+              ) : replies ? (
+                <>
+                  <div className="suggested-reply primary">
+                    <h5>Suggested Reply:</h5>
+                    <textarea
+                      className="reply-textarea"
+                      value={getEditedReplyText(key, 'main', replies.suggested_reply.text)}
+                      onChange={(e) => handleEditReply(key, 'main', e.target.value)}
+                    />
+                    <button
+                      className="btn-copy"
+                      onClick={() => copyToClipboard(getEditedReplyText(key, 'main', replies.suggested_reply.text), `${key}-main`)}
+                    >
+                      {copiedIndex === `${key}-main` ? '✓ Copied!' : 'Copy'}
+                    </button>
                   </div>
-                )}
-              </>
-            ) : null}
+
+                  {replies.alternative_replies && replies.alternative_replies.length > 0 && (
+                    <div className="alternative-replies">
+                      <h5>Alternative Replies:</h5>
+                      {replies.alternative_replies.map((reply, index) => (
+                        <div key={index} className="suggested-reply">
+                          <textarea
+                            className="reply-textarea"
+                            value={getEditedReplyText(key, index, reply.text)}
+                            onChange={(e) => handleEditReply(key, index, e.target.value)}
+                          />
+                          <button
+                            className="btn-copy"
+                            onClick={() => copyToClipboard(getEditedReplyText(key, index, reply.text), `${key}-${index}`)}
+                          >
+                            {copiedIndex === `${key}-${index}` ? '✓ Copied!' : 'Copy'}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : null}
+            </div>
+          )}
+        </div>
+      );
+    } else {
+      const [messageData, isNew] = item.data;
+      const key = `message-${messageData.id}`;
+      const isExpanded = expandedItems[key];
+      const isLoadingReply = loadingReplies[key];
+      const replies = suggestedReplies[key];
+      const fromUsername = messageData.from?.username || 'Unknown';
+
+      return (
+        <div key={messageData.id} className={`interaction-item ${isNew ? 'new-comment' : ''}`}>
+          <div className="interaction-header">
+            <span className="item-type-label message-label">Direct Message</span>
+            <div className="interaction-info">
+              <h4>@{fromUsername}</h4>
+              <span className="timestamp">{formatTimestamp(messageData.created_time)}</span>
+            </div>
           </div>
-        )}
-      </div>
-    );
+          
+          <div className="interaction-content">
+            <p className="interaction-text">{messageData.message}</p>
+          </div>
+
+          <div className="interaction-actions">
+            <button 
+              className="btn-secondary"
+              onClick={() => toggleReplySuggestions(messageData.id, 'message')}
+            >
+              {isExpanded ? '▼ Hide' : '▶ Show'} Reply Suggestions
+            </button>
+          </div>
+
+          {isExpanded && (
+            <div className="reply-suggestions">
+              {isLoadingReply ? (
+                <div className="loading">
+                  <div className="spinner"></div>
+                  <p>Generating AI replies...</p>
+                </div>
+              ) : replies ? (
+                <>
+                  <div className="suggested-reply primary">
+                    <h5>Suggested Reply:</h5>
+                    <textarea
+                      className="reply-textarea"
+                      value={getEditedReplyText(key, 'main', replies.suggested_reply.text)}
+                      onChange={(e) => handleEditReply(key, 'main', e.target.value)}
+                    />
+                    <button
+                      className="btn-copy"
+                      onClick={() => copyToClipboard(getEditedReplyText(key, 'main', replies.suggested_reply.text), `${key}-main`)}
+                    >
+                      {copiedIndex === `${key}-main` ? '✓ Copied!' : 'Copy'}
+                    </button>
+                  </div>
+
+                  {replies.alternative_replies && replies.alternative_replies.length > 0 && (
+                    <div className="alternative-replies">
+                      <h5>Alternative Replies:</h5>
+                      {replies.alternative_replies.map((reply, index) => (
+                        <div key={index} className="suggested-reply">
+                          <textarea
+                            className="reply-textarea"
+                            value={getEditedReplyText(key, index, reply.text)}
+                            onChange={(e) => handleEditReply(key, index, e.target.value)}
+                          />
+                          <button
+                            className="btn-copy"
+                            onClick={() => copyToClipboard(getEditedReplyText(key, index, reply.text), `${key}-${index}`)}
+                          >
+                            {copiedIndex === `${key}-${index}` ? '✓ Copied!' : 'Copy'}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : null}
+            </div>
+          )}
+        </div>
+      );
+    }
   };
+
+  const refreshAll = () => {
+    fetchLatestComments();
+    fetchLatestMessages();
+  };
+
+  const combinedItems = getCombinedAndSortedItems();
+  const isLoading = isLoadingComments || isLoadingMessages;
 
   return (
     <div className="dashboard">
-      <div className="tabs">
-        <button 
-          className={`tab ${activeTab === 'comments' ? 'active' : ''}`}
-          onClick={() => handleTabChange('comments')}
-        >
-          Latest Comments
-        </button>
-        <button 
-          className={`tab ${activeTab === 'messages' ? 'active' : ''}`}
-          onClick={() => handleTabChange('messages')}
-        >
-          Latest Messages
-        </button>
-      </div>
-
       {error && (
         <div className="error-message">
           <p>{error}</p>
         </div>
       )}
 
-      <div className="tab-content">
-        {activeTab === 'comments' ? (
-          <div className="comments-section">
-            {isLoadingComments ? (
-              <div className="loading">
-                <div className="spinner"></div>
-                <p>Loading comments...</p>
-              </div>
-            ) : comments.length === 0 ? (
-              <div className="empty-state">
-                <p>No comments found on your recent posts.</p>
-                <button className="btn" onClick={fetchLatestComments}>
-                  Refresh Comments
-                </button>
-              </div>
-            ) : (
-              <>
-                {comments.map(comment => renderCommentItem(comment))}
-                <div className="refresh-section">
-                  <button className="btn-outline" onClick={fetchLatestComments}>
-                    Refresh Comments
-                  </button>
-                </div>
-              </>
-            )}
+      <div className="refresh-section">
+        <button className="btn-outline" onClick={refreshAll}>
+          Refresh All
+        </button>
+      </div>
+
+      <div className="content-section">
+        {isLoading ? (
+          <div className="loading">
+            <div className="spinner"></div>
+            <p>Loading...</p>
+          </div>
+        ) : combinedItems.length === 0 ? (
+          <div className="empty-state">
+            <p>No comments or messages found.</p>
+            <button className="btn" onClick={refreshAll}>
+              Refresh All
+            </button>
           </div>
         ) : (
-          <div className="messages-section">
-            {isLoadingMessages ? (
-              <div className="loading">
-                <div className="spinner"></div>
-                <p>Loading messages...</p>
-              </div>
-            ) : messages.length === 0 ? (
-              <div className="empty-state">
-                <p>No messages found in your Instagram Direct.</p>
-                <button className="btn" onClick={fetchLatestMessages}>
-                  Refresh Messages
-                </button>
-              </div>
-            ) : (
-              <>
-                {messages.map(message => renderMessageItem(message))}
-                <div className="refresh-section">
-                  <button className="btn-outline" onClick={fetchLatestMessages}>
-                    Refresh Messages
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+          <>
+            {combinedItems.map(item => renderItem(item))}
+          </>
         )}
       </div>
     </div>

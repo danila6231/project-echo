@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
-    title="AI SMM Assistant",
+    title="Replify AI SMM Assistant",
     description="Generate social media content ideas based on profile screenshots"
 )
 

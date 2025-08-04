@@ -32,41 +32,50 @@ body {
 }
 
 .App-header {
-  background-color: #282c34;
-  padding: 20px;
-  color: white;
-  text-align: center;
+  background-color: #383838;
+  padding: 1rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.app-logo {
+  height: 40px;
+  width: auto;
 }
 
 .App-header h1 {
   margin: 0;
-  flex-grow: 1;
-  text-align: center;
+  font-size: 1.5rem;
+  color: #ffffff;
 }
 
 .user-info {
   display: flex;
+  color: #ffffff;
   align-items: center;
-  gap: 16px;
-  font-size: 16px;
+  gap: 1rem;
 }
 
 .logout-button {
-  background: #dc2743;
-  color: white;
+  padding: 0.5rem 1rem;
+  color: #ffffff;
   border: none;
   border-radius: 4px;
-  padding: 8px 16px;
-  font-size: 14px;
+  background-color: #e34343;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background-color 0.2s;
 }
 
 .logout-button:hover {
-  background: #c53030;
+  background-color: #ad2929;
 }
 
 .loading-container {
@@ -173,6 +182,7 @@ textarea {
   justify-content: center;
   align-items: center;
   min-height: 200px;
+  gap: 15px;
 }
 
 .spinner {
@@ -192,6 +202,9 @@ textarea {
 /* Dashboard Styles */
 .dashboard {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
 
 /* Tabs */
@@ -236,12 +249,36 @@ textarea {
   background: var(--primary-color);
 }
 
-/* Tab Content */
-.tab-content {
-  background: white;
-  border-radius: 0 0 var(--border-radius) var(--border-radius);
+/* Content Section */
+.content-section {
+  background: var(--gray-light);
+  border-radius: var(--border-radius);
   box-shadow: var(--shadow);
   padding: 2rem;
+  width: 100%;
+}
+
+/* Item Type Labels */
+.item-type-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.6rem;
+  border-radius: 12px;
+  margin-right: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.comment-label {
+  background-color: #e8f5e8;
+  color: #2d5a2d;
+  border: 1px solid #a8d8a8;
+}
+
+.message-label {
+  background-color: #f0e8ff;
+  color: #5a2d5a;
+  border: 1px solid #c8a8d8;
 }
 
 /* Interaction Items */
@@ -444,16 +481,15 @@ textarea {
 
 /* Refresh Section */
 .refresh-section {
-  text-align: center;
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 1px solid var(--gray-medium);
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0;
 }
 
 .btn-outline {
   background: transparent;
+  border: 2px solid var(--primary-color);
   color: var(--primary-color);
-  border: 1px solid var(--primary-color);
   padding: 0.8rem 1.5rem;
   border-radius: var(--border-radius);
   font-size: 1rem;
@@ -464,6 +500,7 @@ textarea {
 .btn-outline:hover {
   background: var(--primary-color);
   color: white;
+  transform: translateY(-2px);
 }
 
 /* Responsive adjustments */
@@ -498,7 +535,7 @@ textarea {
     margin-top: 0.5rem;
   }
   
-  .tab-content {
+  .content-section {
     padding: 1rem;
   }
 }

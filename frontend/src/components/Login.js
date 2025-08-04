@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from '../utils/axios';
 import './Login.css';
+import logo from '../assets/logo.png';
 
 function Login() {
   const navigate = useNavigate();
@@ -57,7 +58,10 @@ function Login() {
   return (
     <div className="login-container">
       <div className="login-card">
-        <h1>AI SMM Assistant</h1>
+        <div className="title-container">
+          <img src={logo} alt="Replify Logo" className="login-logo" />
+          <h1>Replify AI Assistant</h1>
+        </div>
         <p>Login with your Instagram Business account to get started</p>
         
         {error && (

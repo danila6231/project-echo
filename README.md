@@ -1,10 +1,10 @@
-# AI SMM Assistant
+# Replify AI Assistant
 
 Generate personalized social media content ideas based on your profile screenshots.
 
 ## Overview
 
-AI SMM Assistant helps creators and small businesses generate social media content ideas. Upload 1-3 screenshots of your Instagram (or other social profile) and optionally describe your account. The system analyzes the content and suggests personalized content ideas using an LLM with image understanding.
+Replify AI Assistant helps creators and small businesses generate social media content ideas. Upload 1-3 screenshots of your Instagram (or other social profile) and optionally describe your account. The system analyzes the content and suggests personalized content ideas using an LLM with image understanding.
 
 ## Features
 

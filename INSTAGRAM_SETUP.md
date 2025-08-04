@@ -1,6 +1,6 @@
 # Instagram Business API Setup Guide
 
-This guide will help you set up Instagram Business login for the AI SMM Assistant.
+This guide will help you set up Instagram Business login for the Replify Assistant.
 
 ## Prerequisites
 
@@ -14,7 +14,7 @@ This guide will help you set up Instagram Business login for the AI SMM Assistan
 2. Click "My Apps" → "Create App"
 3. Select "Consumer" as the app type
 4. Fill in the app details:
-   - App Name: Your app name (e.g., "AI SMM Assistant")
+   - App Name: Your app name (e.g., "Replify Assistant")
    - App Contact Email: Your email
    - App Purpose: Select appropriate purpose
 

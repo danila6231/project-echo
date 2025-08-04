@@ -3,6 +3,7 @@ import openai
 import base64
 from pathlib import Path
 from typing import List, Dict
+from app.core.config.main_config import settings
 
 from pydantic import BaseModel, Field, ValidationError
 
@@ -66,7 +67,7 @@ class Chat:
 
 
 class OpenAIClient:
-    def __init__(self, model="gpt-4.1-nano-2025-04-14"):
+    def __init__(self, model=settings.LLM_MODEL):
         self.model = model
         self.client = openai.OpenAI(api_key="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")
         self.chats: Dict[str, Chat] = {}

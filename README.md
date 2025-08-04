@@ -1,22 +1,15 @@
 # Replify AI Assistant
 
-Generate personalized social media content ideas based on your profile screenshots.
+Generate automatic AI replies that replicate the voice of the author based on your profile screenshots.
 
 ## Overview
 
-Replify AI Assistant helps creators and small businesses generate social media content ideas. Upload 1-3 screenshots of your Instagram (or other social profile) and optionally describe your account. The system analyzes the content and suggests personalized content ideas using an LLM with image understanding.
+Replify AI Assistant helps creators and small businesses generate automatic AI replies that replicate the voice of the author. Connect your Instagram business account and the tool will analyze the content and generate replies that mimic the author's voice using an LLM with image understanding.
 
 ## Features
 
-- Upload 1-3 screenshots of your social media profile
-- Add optional text description of your account (tone, niche, goals)
-- Get a brief summary of your account style
-- Receive 2-3 content ideas with:
-  - Caption drafts
-  - Hashtag suggestions
-  - Post themes
-- No login required
-- Bookmark results for later reference
+- Connect your Instagram profile
+- Receive generated replies for incoming comments / messages that replicate your voice
 
 ## Tech Stack
 

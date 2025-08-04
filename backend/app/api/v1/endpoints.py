@@ -391,7 +391,7 @@ async def suggest_message_reply(
         new_reply = chat_gpt_service.handle_incoming_interaction(
             user_id,
             access_token,
-            f"Direct message: {message_details.message}"
+            message_details.message
         )
         # print('New reply to message:', new_reply)
         replies.append(new_reply)

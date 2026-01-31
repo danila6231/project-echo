@@ -14,12 +14,16 @@ from app.services.llm_engine import llm_engine
 from app.services.token_manager import token_manager
 from app.services.context_processor import context_processor
 from app.services.session_manager import session_manager
-from app.core.config.main_config import settings, Settings
+from app.core.config.main_config import settings
 from app.infrastructure.instagram_client import InstagramApiClient
 
 router = APIRouter()
 chat_gpt_service = ChatGptService()
-settings = Settings()
+
+REPLY_CACHE_VERSION = "v1"
+
+def _reply_cache_key(user_id: str, item_type: str, item_id: str) -> str:
+    return f"reply_cache:{REPLY_CACHE_VERSION}:{item_type}:{user_id}:{item_id}"
 
 def get_auth_session(session_id: Annotated[Optional[str], Cookie()] = None):
     """Helper function to check authentication and return session data."""
@@ -223,6 +227,7 @@ async def check_auth(session_id: Annotated[Optional[str], Cookie()] = None):
     """Check if user is authenticated."""
     try:
         session = get_auth_session(session_id)
+        print('Session is: ' + str(session))
         return {
             "authenticated": True,
             "user": {
@@ -310,8 +315,19 @@ async def suggest_comment_reply(
     if not access_token:
         raise HTTPException(status_code=401, detail="Access token not found or session expired")
 
-    if not access_token:
+    if not user_id:
         raise HTTPException(status_code=401, detail="User id not found or session expired")
+
+    cache_key = _reply_cache_key(user_id, "comment", comment_id)
+    redis_client = RedisClient()
+    try:
+        cached_reply = redis_client.get_json(cache_key)
+        if cached_reply:
+            print(f"Reply cache hit for comment_id={comment_id}; user_id={user_id}")
+            return cached_reply
+        print(f"Reply cache miss for comment_id={comment_id}; user_id={user_id}")
+    except Exception as e:
+        print(f"Reply cache read failed for comment_id={comment_id}; user_id={user_id}: {str(e)}")
 
     inst_client = InstagramApiClient()
     inst_client.long_lived_token = access_token
@@ -338,7 +354,7 @@ async def suggest_comment_reply(
     #  нужен логин адекватный чтобы тестить acess_token,
     #  пока дурацкий мок от фронта приходит
     #  (inst_client.long_lived_token = access_token)
-    return {
+    response = {
         "suggested_reply": {
             "text": replies[0],
             "tone": "todo: убрать поле",
@@ -360,6 +376,11 @@ async def suggest_comment_reply(
             }
         ]
     }
+    try:
+        redis_client.store_json(cache_key, response, expiry=settings.REPLY_CACHE_TTL_SECONDS)
+    except Exception as e:
+        print(f"Reply cache write failed for comment_id={comment_id}; user_id={user_id}: {str(e)}")
+    return response
 
 @router.post("/messages/suggest-reply")
 async def suggest_message_reply(
@@ -375,8 +396,19 @@ async def suggest_message_reply(
     if not access_token:
         raise HTTPException(status_code=401, detail="Access token not found or session expired")
 
-    if not access_token:
+    if not user_id:
         raise HTTPException(status_code=401, detail="User id not found or session expired")
+
+    cache_key = _reply_cache_key(user_id, "message", message_id)
+    redis_client = RedisClient()
+    try:
+        cached_reply = redis_client.get_json(cache_key)
+        if cached_reply:
+            print(f"Reply cache hit for message_id={message_id}; user_id={user_id}")
+            return cached_reply
+        print(f"Reply cache miss for message_id={message_id}; user_id={user_id}")
+    except Exception as e:
+        print(f"Reply cache read failed for message_id={message_id}; user_id={user_id}: {str(e)}")
 
     inst_client = InstagramApiClient()
     inst_client.long_lived_token = access_token
@@ -398,7 +430,7 @@ async def suggest_message_reply(
 
     # Mock reply suggestion based on "account analysis"
     # TODO: отдавать просто text, все остальное пока опустить, синкануть с фронтом
-    return {
+    response = {
         "suggested_reply": {
             "text": replies[0],
             "tone": "todo: убрать поле",
@@ -420,6 +452,11 @@ async def suggest_message_reply(
             }
         ]
     }
+    try:
+        redis_client.store_json(cache_key, response, expiry=settings.REPLY_CACHE_TTL_SECONDS)
+    except Exception as e:
+        print(f"Reply cache write failed for message_id={message_id}; user_id={user_id}: {str(e)}")
+    return response
 
 
 @router.get("/message/latest")

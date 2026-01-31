@@ -43,6 +43,9 @@ class Settings(BaseModel):
     
     # Context Settings
     CONTEXT_EXPIRATION_TIME: int = int(os.getenv("CONTEXT_EXPIRATION_TIME", "100000"))
+
+    # Reply suggestions cache (in seconds, default 1 day)
+    REPLY_CACHE_TTL_SECONDS: int = int(os.getenv("REPLY_CACHE_TTL_SECONDS", "86400"))
     
     # Frontend URL
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:3000")

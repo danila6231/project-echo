@@ -54,14 +54,14 @@ project-echo/
 ### Backend Setup
 
 1. Create and activate a virtual environment:
-   ```
+   ```shell
    cd backend
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
 2. Install dependencies:
-   ```
+   ```shell
    pip install -r requirements.txt
    ```
 
@@ -71,20 +71,20 @@ project-echo/
    ```
 
 4. Run the server:
-   ```
+   ```shell
    uvicorn main:app --reload
    ```
 
 ### Frontend Setup
 
 1. Install dependencies:
-   ```
+   ```shell
    cd frontend
    npm install
    ```
 
 2. Run the development server:
-   ```
+   ```shell
    npm start
    ```
 
@@ -93,6 +93,16 @@ project-echo/
 ## Deployment
 
 The application can be deployed using Docker and Docker Compose for both the frontend and backend.
+
+(1) Deploying via Docker:
+```shell
+docker compose down && docker compose up -d --build
+```
+
+(2) Deploying via Docker (**hot reload**):
+```shell
+docker compose watch
+```
 
 ## License
 

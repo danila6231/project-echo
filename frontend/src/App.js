@@ -70,22 +70,8 @@ function App() {
         )}
         <main>
           <Routes>
-            <Route 
-              path="/login" 
-              element={
-                isAuthenticated ? <Navigate to="/" replace /> : <Login />
-              } 
-            />
-            <Route 
-              path="/" 
-              element={
-                isAuthenticated ? (
-                  <Dashboard />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              } 
-            />
+            <Route element={ isAuthenticated ? <Navigate to="/" replace /> : <Login /> } />
+            <Route path="/" element={ isAuthenticated ? (<Dashboard />) : (<Navigate to="/login" replace />) }/>
           </Routes>
         </main>
         {isAuthenticated && (

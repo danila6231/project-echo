@@ -21,8 +21,25 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     restart: unless-stopped
-    volumes:
-      - ./backend:/app
+#    volumes:
+#      - ./backend:/app
+    develop:
+      watch:
+        - action: sync
+          path: ./backend
+          target: /app
+          ignore:
+            - __pycache__/
+            - .git/
+            - "*.pyc"
+            - venv/
+
+        - action: rebuild
+          path: ./backend/requirements.txt
+
+          # Автопересборка при изменении Dockerfile
+        - action: rebuild
+          path: ./backend/Dockerfile
 
   redis:
     image: redis:alpine

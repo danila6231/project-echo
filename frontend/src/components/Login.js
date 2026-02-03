@@ -10,6 +10,18 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const checkAuth = async () => {
+    try {
+      const response = await axios.get('/api/v1/auth/check');
+      
+      if (response.data.authenticated) {
+        navigate('/');
+      }
+    } catch (err) {
+      console.error('Auth check failed:', err);
+    }
+  };
+  
   useEffect(() => {
     // Check for error in URL params
     const urlError = searchParams.get('error');
@@ -24,18 +36,6 @@ function Login() {
     // Check if user is already authenticated
     checkAuth();
   }, [searchParams]);
-
-  const checkAuth = async () => {
-    try {
-      const response = await axios.get('/api/v1/auth/check');
-      
-      if (response.data.authenticated) {
-        navigate('/');
-      }
-    } catch (err) {
-      console.error('Auth check failed:', err);
-    }
-  };
 
   const handleInstagramLogin = async () => {
     setLoading(true);

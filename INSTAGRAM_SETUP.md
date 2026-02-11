@@ -70,7 +70,6 @@ For production use, you'll need to submit your app for review:
 1. Complete all required fields in App Review
 2. Request the following permissions:
    - `instagram_business_basic`
-   - `instagram_business_content_publish`
    - `instagram_business_manage_messages`
    - `instagram_business_manage_comments`
 

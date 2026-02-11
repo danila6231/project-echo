@@ -141,7 +141,7 @@ async def instagram_login():
         "force_reauth": "true",
         "client_id": settings.INSTAGRAM_CLIENT_ID,
         "redirect_uri": settings.INSTAGRAM_REDIRECT_URI,
-        "scope": "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,instagram_business_content_publish,instagram_business_manage_insights",
+        "scope": "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments",
         "response_type": "code"
     }
     auth_url = f"https://www.instagram.com/oauth/authorize?{urlencode(params)}"

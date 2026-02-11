@@ -62,6 +62,9 @@ function Login() {
           <img src={logo} alt="Replify Logo" className="login-logo" />
           <h1>Replify AI Assistant</h1>
         </div>
+        <p className="app-description">
+          AI assistant for small business owners and creators that helps them respond to Instagram comments and messages faster — in their own authentic voice. By analyzing past posts, captions, and replies, the assistant learns how your brand communicates and generates natural, on-brand replies to save time and boost engagement.
+        </p>
         <p>Login with your Instagram Business account to get started</p>
         
         {error && (

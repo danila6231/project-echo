@@ -1,4 +1,5 @@
 import traceback
+from datetime import datetime, timezone, timedelta
 
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Response, Cookie, Depends
 from fastapi.responses import RedirectResponse
@@ -513,6 +514,15 @@ async def post_message_reply(
         message_details = inst_client.get_message_info(message_id)
         if not message_details.from_user or not message_details.from_user.id:
             raise HTTPException(status_code=400, detail="Could not determine DM recipient for this message")
+
+        created_time = message_details.created_time
+        if created_time.tzinfo is None:
+            created_time = created_time.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) - created_time > timedelta(hours=24):
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot send automatic DM reply because this message is older than 24 hours"
+            )
 
         post_result = inst_client.send_direct_reply(
             sender_id=sender_id,

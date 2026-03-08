@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from '../utils/axios';
 
 function Dashboard() {
+  const DM_AUTO_REPLY_WINDOW_HOURS = 24;
   const [comments, setComments] = useState([]);
   const [messages, setMessages] = useState([]);
   const [isLoadingComments, setIsLoadingComments] = useState(true);
@@ -164,6 +165,16 @@ function Dashboard() {
     }
   };
 
+  const isWithinDmAutoReplyWindow = (createdTime) => {
+    const messageTime = new Date(createdTime);
+    if (Number.isNaN(messageTime.getTime())) {
+      return true;
+    }
+
+    const ageInMs = Date.now() - messageTime.getTime();
+    return ageInMs <= DM_AUTO_REPLY_WINDOW_HOURS * 60 * 60 * 1000;
+  };
+
   const getCombinedAndSortedItems = () => {
     const commentItems = comments.map(comment => ({
       data: comment,
@@ -309,6 +320,7 @@ function Dashboard() {
       const isLoadingReply = loadingReplies[key];
       const replies = suggestedReplies[key];
       const fromUsername = messageData.from?.username || 'Unknown';
+      const canAutoReplyByAge = isWithinDmAutoReplyWindow(messageData.created_time);
 
       return (
         <div key={messageData.id} className={`interaction-item ${isNew ? 'new-comment' : ''}`}>
@@ -342,6 +354,13 @@ function Dashboard() {
                 </div>
               ) : replies ? (
                 <>
+                  {!canAutoReplyByAge && (
+                    <div className="reply-window-warning" title="Instagram only allows automatic DM replies within 24 hours of the customer's message.">
+                      <span className="reply-window-icon" aria-hidden="true">ℹ️</span>
+                      <span>Automatic posting is unavailable for DMs older than 24 hours.</span>
+                    </div>
+                  )}
+
                   <div className="suggested-reply primary">
                     <h5>Suggested Reply:</h5>
                     <textarea
@@ -356,20 +375,24 @@ function Dashboard() {
                       >
                         {copiedIndex === `${key}-main` ? '✓ Copied!' : 'Copy'}
                       </button>
-                      <button
-                        className="btn-post-reply"
-                        onClick={() => postReplyToInstagram(
-                          messageData.id,
-                          'message',
-                          'main',
-                          getEditedReplyText(key, 'main', replies.suggested_reply.text)
-                        )}
-                        disabled={postingReplies[`${key}-main`]}
-                      >
-                        {postingReplies[`${key}-main`] ? 'Posting...' : 'Post reply'}
-                      </button>
-                      {postedReplies[`${key}-main`] && (
-                        <span className="reply-posted-label">Posted</span>
+                      {canAutoReplyByAge && (
+                        <>
+                          <button
+                            className="btn-post-reply"
+                            onClick={() => postReplyToInstagram(
+                              messageData.id,
+                              'message',
+                              'main',
+                              getEditedReplyText(key, 'main', replies.suggested_reply.text)
+                            )}
+                            disabled={postingReplies[`${key}-main`]}
+                          >
+                            {postingReplies[`${key}-main`] ? 'Posting...' : 'Post reply'}
+                          </button>
+                          {postedReplies[`${key}-main`] && (
+                            <span className="reply-posted-label">Posted</span>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -391,20 +414,24 @@ function Dashboard() {
                             >
                               {copiedIndex === `${key}-${index}` ? '✓ Copied!' : 'Copy'}
                             </button>
-                            <button
-                              className="btn-post-reply"
-                              onClick={() => postReplyToInstagram(
-                                messageData.id,
-                                'message',
-                                index,
-                                getEditedReplyText(key, index, reply.text)
-                              )}
-                              disabled={postingReplies[`${key}-${index}`]}
-                            >
-                              {postingReplies[`${key}-${index}`] ? 'Posting...' : 'Post reply'}
-                            </button>
-                            {postedReplies[`${key}-${index}`] && (
-                              <span className="reply-posted-label">Posted</span>
+                            {canAutoReplyByAge && (
+                              <>
+                                <button
+                                  className="btn-post-reply"
+                                  onClick={() => postReplyToInstagram(
+                                    messageData.id,
+                                    'message',
+                                    index,
+                                    getEditedReplyText(key, index, reply.text)
+                                  )}
+                                  disabled={postingReplies[`${key}-${index}`]}
+                                >
+                                  {postingReplies[`${key}-${index}`] ? 'Posting...' : 'Post reply'}
+                                </button>
+                                {postedReplies[`${key}-${index}`] && (
+                                  <span className="reply-posted-label">Posted</span>
+                                )}
+                              </>
                             )}
                           </div>
                         </div>

@@ -1,4 +1,5 @@
 import traceback
+from datetime import datetime, timezone, timedelta
 
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Response, Cookie, Depends
 from fastapi.responses import RedirectResponse
@@ -382,6 +383,35 @@ async def suggest_comment_reply(
         print(f"Reply cache write failed for comment_id={comment_id}; user_id={user_id}: {str(e)}")
     return response
 
+@router.post("/comments/post-reply")
+async def post_comment_reply(
+    comment_id: str = Form(...),
+    reply_text: str = Form(...),
+    session: dict = Depends(get_auth_session)
+):
+    """Post a public reply to an Instagram comment."""
+    access_token = session.get("access_token")
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Access token not found or session expired")
+
+    if not reply_text or not reply_text.strip():
+        raise HTTPException(status_code=400, detail="Reply text cannot be empty")
+
+    inst_client = InstagramApiClient()
+    inst_client.long_lived_token = access_token
+
+    try:
+        post_result = inst_client.reply_to_comment(comment_id=comment_id, text=reply_text.strip())
+        return {
+            "status": "posted",
+            "type": "comment",
+            "comment_id": comment_id,
+            "reply_id": post_result.get("id")
+        }
+    except Exception as e:
+        print(f"Failed to post comment reply; comment_id={comment_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to post comment reply: {str(e)}")
+
 @router.post("/messages/suggest-reply")
 async def suggest_message_reply(
     message_id: str = Form(...),
@@ -457,6 +487,60 @@ async def suggest_message_reply(
     except Exception as e:
         print(f"Reply cache write failed for message_id={message_id}; user_id={user_id}: {str(e)}")
     return response
+
+@router.post("/messages/post-reply")
+async def post_message_reply(
+    message_id: str = Form(...),
+    reply_text: str = Form(...),
+    session: dict = Depends(get_auth_session)
+):
+    """Post a direct message reply to the sender of an Instagram message."""
+    access_token = session.get("access_token")
+    sender_id = session.get("user_id")
+
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Access token not found or session expired")
+
+    if not sender_id:
+        raise HTTPException(status_code=401, detail="User id not found or session expired")
+
+    if not reply_text or not reply_text.strip():
+        raise HTTPException(status_code=400, detail="Reply text cannot be empty")
+
+    inst_client = InstagramApiClient()
+    inst_client.long_lived_token = access_token
+
+    try:
+        message_details = inst_client.get_message_info(message_id)
+        if not message_details.from_user or not message_details.from_user.id:
+            raise HTTPException(status_code=400, detail="Could not determine DM recipient for this message")
+
+        created_time = message_details.created_time
+        if created_time.tzinfo is None:
+            created_time = created_time.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) - created_time > timedelta(hours=24):
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot send automatic DM reply because this message is older than 24 hours"
+            )
+
+        post_result = inst_client.send_direct_reply(
+            sender_id=sender_id,
+            recipient_id=message_details.from_user.id,
+            text=reply_text.strip()
+        )
+        return {
+            "status": "posted",
+            "type": "message",
+            "message_id": message_id,
+            "recipient_id": message_details.from_user.id,
+            "reply_id": post_result.get("message_id")
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Failed to post message reply; message_id={message_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to post message reply: {str(e)}")
 
 
 @router.get("/message/latest")

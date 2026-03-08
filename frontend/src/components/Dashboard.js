@@ -12,6 +12,8 @@ function Dashboard() {
   const [suggestedReplies, setSuggestedReplies] = useState({});
   const [editingReply, setEditingReply] = useState({});
   const [copiedIndex, setCopiedIndex] = useState(null);
+  const [postingReplies, setPostingReplies] = useState({});
+  const [postedReplies, setPostedReplies] = useState({});
 
   useEffect(() => {
     fetchLatestComments();
@@ -112,6 +114,40 @@ function Dashboard() {
     }
   };
 
+  const postReplyToInstagram = async (itemId, type, replyIndex, text) => {
+    const replyText = (text || '').trim();
+    if (!replyText) {
+      setError('Reply text cannot be empty');
+      return;
+    }
+
+    const actionKey = `${type}-${itemId}-${replyIndex}`;
+    const endpoint = type === 'comment'
+      ? '/api/v1/comments/post-reply'
+      : '/api/v1/messages/post-reply';
+
+    setError('');
+    setPostedReplies(prev => ({ ...prev, [actionKey]: false }));
+    setPostingReplies(prev => ({ ...prev, [actionKey]: true }));
+
+    try {
+      const formData = new FormData();
+      formData.append(type === 'comment' ? 'comment_id' : 'message_id', itemId);
+      formData.append('reply_text', replyText);
+
+      await axios.post(endpoint, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      setPostedReplies(prev => ({ ...prev, [actionKey]: true }));
+    } catch (err) {
+      console.error('Error posting reply:', err);
+      setError(err.response?.data?.detail || 'Failed to post reply to Instagram');
+    } finally {
+      setPostingReplies(prev => ({ ...prev, [actionKey]: false }));
+    }
+  };
+
   const formatTimestamp = (timestamp) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -198,12 +234,29 @@ function Dashboard() {
                       value={getEditedReplyText(key, 'main', replies.suggested_reply.text)}
                       onChange={(e) => handleEditReply(key, 'main', e.target.value)}
                     />
-                    <button
-                      className="btn-copy"
-                      onClick={() => copyToClipboard(getEditedReplyText(key, 'main', replies.suggested_reply.text), `${key}-main`)}
-                    >
-                      {copiedIndex === `${key}-main` ? '✓ Copied!' : 'Copy'}
-                    </button>
+                    <div className="reply-actions-row">
+                      <button
+                        className="btn-copy"
+                        onClick={() => copyToClipboard(getEditedReplyText(key, 'main', replies.suggested_reply.text), `${key}-main`)}
+                      >
+                        {copiedIndex === `${key}-main` ? '✓ Copied!' : 'Copy'}
+                      </button>
+                      <button
+                        className="btn-post-reply"
+                        onClick={() => postReplyToInstagram(
+                          commentData.id,
+                          'comment',
+                          'main',
+                          getEditedReplyText(key, 'main', replies.suggested_reply.text)
+                        )}
+                        disabled={postingReplies[`${key}-main`]}
+                      >
+                        {postingReplies[`${key}-main`] ? 'Posting...' : 'Post reply'}
+                      </button>
+                      {postedReplies[`${key}-main`] && (
+                        <span className="reply-posted-label">Posted</span>
+                      )}
+                    </div>
                   </div>
 
                   {replies.alternative_replies && replies.alternative_replies.length > 0 && (
@@ -216,12 +269,29 @@ function Dashboard() {
                             value={getEditedReplyText(key, index, reply.text)}
                             onChange={(e) => handleEditReply(key, index, e.target.value)}
                           />
-                          <button
-                            className="btn-copy"
-                            onClick={() => copyToClipboard(getEditedReplyText(key, index, reply.text), `${key}-${index}`)}
-                          >
-                            {copiedIndex === `${key}-${index}` ? '✓ Copied!' : 'Copy'}
-                          </button>
+                          <div className="reply-actions-row">
+                            <button
+                              className="btn-copy"
+                              onClick={() => copyToClipboard(getEditedReplyText(key, index, reply.text), `${key}-${index}`)}
+                            >
+                              {copiedIndex === `${key}-${index}` ? '✓ Copied!' : 'Copy'}
+                            </button>
+                            <button
+                              className="btn-post-reply"
+                              onClick={() => postReplyToInstagram(
+                                commentData.id,
+                                'comment',
+                                index,
+                                getEditedReplyText(key, index, reply.text)
+                              )}
+                              disabled={postingReplies[`${key}-${index}`]}
+                            >
+                              {postingReplies[`${key}-${index}`] ? 'Posting...' : 'Post reply'}
+                            </button>
+                            {postedReplies[`${key}-${index}`] && (
+                              <span className="reply-posted-label">Posted</span>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -279,12 +349,29 @@ function Dashboard() {
                       value={getEditedReplyText(key, 'main', replies.suggested_reply.text)}
                       onChange={(e) => handleEditReply(key, 'main', e.target.value)}
                     />
-                    <button
-                      className="btn-copy"
-                      onClick={() => copyToClipboard(getEditedReplyText(key, 'main', replies.suggested_reply.text), `${key}-main`)}
-                    >
-                      {copiedIndex === `${key}-main` ? '✓ Copied!' : 'Copy'}
-                    </button>
+                    <div className="reply-actions-row">
+                      <button
+                        className="btn-copy"
+                        onClick={() => copyToClipboard(getEditedReplyText(key, 'main', replies.suggested_reply.text), `${key}-main`)}
+                      >
+                        {copiedIndex === `${key}-main` ? '✓ Copied!' : 'Copy'}
+                      </button>
+                      <button
+                        className="btn-post-reply"
+                        onClick={() => postReplyToInstagram(
+                          messageData.id,
+                          'message',
+                          'main',
+                          getEditedReplyText(key, 'main', replies.suggested_reply.text)
+                        )}
+                        disabled={postingReplies[`${key}-main`]}
+                      >
+                        {postingReplies[`${key}-main`] ? 'Posting...' : 'Post reply'}
+                      </button>
+                      {postedReplies[`${key}-main`] && (
+                        <span className="reply-posted-label">Posted</span>
+                      )}
+                    </div>
                   </div>
 
                   {replies.alternative_replies && replies.alternative_replies.length > 0 && (
@@ -297,12 +384,29 @@ function Dashboard() {
                             value={getEditedReplyText(key, index, reply.text)}
                             onChange={(e) => handleEditReply(key, index, e.target.value)}
                           />
-                          <button
-                            className="btn-copy"
-                            onClick={() => copyToClipboard(getEditedReplyText(key, index, reply.text), `${key}-${index}`)}
-                          >
-                            {copiedIndex === `${key}-${index}` ? '✓ Copied!' : 'Copy'}
-                          </button>
+                          <div className="reply-actions-row">
+                            <button
+                              className="btn-copy"
+                              onClick={() => copyToClipboard(getEditedReplyText(key, index, reply.text), `${key}-${index}`)}
+                            >
+                              {copiedIndex === `${key}-${index}` ? '✓ Copied!' : 'Copy'}
+                            </button>
+                            <button
+                              className="btn-post-reply"
+                              onClick={() => postReplyToInstagram(
+                                messageData.id,
+                                'message',
+                                index,
+                                getEditedReplyText(key, index, reply.text)
+                              )}
+                              disabled={postingReplies[`${key}-${index}`]}
+                            >
+                              {postingReplies[`${key}-${index}`] ? 'Posting...' : 'Post reply'}
+                            </button>
+                            {postedReplies[`${key}-${index}`] && (
+                              <span className="reply-posted-label">Posted</span>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>

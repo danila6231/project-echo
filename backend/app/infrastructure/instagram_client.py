@@ -136,6 +136,44 @@ class InstagramApiClient:
         response = requests.post(url, data=json.dumps(payload), headers=headers)
         return SendingMessageResponseDto.model_validate(response.json())
 
+    def send_direct_reply(self, sender_id: str, recipient_id: str, text: str) -> dict:
+        """
+        Send a direct message reply and return raw Graph API response.
+        """
+        url = f"https://graph.instagram.com/v23.0/{sender_id}/messages"
+        headers = {
+            "Authorization": f"Bearer {self.long_lived_token}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "recipient": {"id": recipient_id},
+            "message": {"text": text},
+        }
+        response = requests.post(url, data=json.dumps(payload), headers=headers, timeout=30)
+        response_json = response.json()
+        if response.status_code >= 400 or response_json.get("error"):
+            raise RuntimeError(
+                f"Failed to send direct reply: {response_json.get('error', response_json)}"
+            )
+        return response_json
+
+    def reply_to_comment(self, comment_id: str, text: str) -> dict:
+        """
+        Reply publicly to an Instagram comment.
+        """
+        url = f"https://graph.instagram.com/v23.0/{comment_id}/replies"
+        payload = {
+            "message": text,
+            "access_token": self.long_lived_token,
+        }
+        response = requests.post(url, data=payload, timeout=30)
+        response_json = response.json()
+        if response.status_code >= 400 or response_json.get("error"):
+            raise RuntimeError(
+                f"Failed to post comment reply: {response_json.get('error', response_json)}"
+            )
+        return response_json
+
     # TODO
     def send_private_reply(self, recipient: str, text: str):
         """

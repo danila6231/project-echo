@@ -447,6 +447,41 @@ textarea {
   transform: translateY(-1px);
 }
 
+.reply-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-post-reply {
+  background: #2f9a4d;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-post-reply:hover {
+  background: #20753a;
+  transform: translateY(-1px);
+}
+
+.btn-post-reply:disabled {
+  background: var(--gray-medium);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.reply-posted-label {
+  color: #20753a;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
 .alternative-replies {
   margin-top: 1.5rem;
 }
